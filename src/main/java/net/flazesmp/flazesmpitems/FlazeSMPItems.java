@@ -28,6 +28,7 @@ public class FlazeSMPItems {
         
         modEventBus.addListener(this::commonSetup);
 
+        // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -39,6 +40,7 @@ public class FlazeSMPItems {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         // Server starting code if needed
+        LOGGER.info("ItemTooltipEnhancer: Server starting");
     }
 
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
