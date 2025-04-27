@@ -3,16 +3,17 @@ package net.flazesmp.flazesmpitems.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
-import net.flazesmp.flazesmpitems.command.commands.GetTextureCommand;
+import net.flazesmp.flazesmpitems.command.commands.*;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Registry for all mod commands
+ * Registers all commands for the mod
  */
 @Mod.EventBusSubscriber(modid = FlazeSMPItems.MOD_ID)
 public class ModCommands {
@@ -22,20 +23,13 @@ public class ModCommands {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         CommandBuildContext buildContext = event.getBuildContext();
         
-        // Register the main commands with aliases
+        // Register the main command with aliases
         registerMainCommand(dispatcher, buildContext, "itemtooltipenhancer");
         registerMainCommand(dispatcher, buildContext, "ite");
         
-        FlazeSMPItems.LOGGER.info("ItemTooltipEnhancer: Registered commands");
+        FlazeSMPItems.LOGGER.info("ItemTooltipEnhancer commands registered");
     }
     
-    /**
-     * Registers a main command with the given name and all subcommands
-     * 
-     * @param dispatcher The command dispatcher
-     * @param buildContext The command build context
-     * @param commandName The main command name
-     */
     private static void registerMainCommand(
             CommandDispatcher<CommandSourceStack> dispatcher, 
             CommandBuildContext buildContext,
@@ -44,38 +38,36 @@ public class ModCommands {
         LiteralArgumentBuilder<CommandSourceStack> mainCommand = Commands.literal(commandName)
             .requires(source -> source.hasPermission(0));
         
-        // Add all subcommands to the main command
-        // Each subcommand is responsible for attaching itself to the provided builder
+        // Register subcommands
         GetTextureCommand.register(mainCommand, buildContext);
+        EditItemNameCommand.register(mainCommand, buildContext);
+        EditItemTooltipCommand.register(mainCommand, buildContext);
+        EditItemRarityCommand.register(mainCommand, buildContext);
+        ResetItemCommand.register(mainCommand, buildContext); // Register the new reset command
         
         // Add help command
         mainCommand.then(Commands.literal("help")
             .executes(context -> {
-                context.getSource().sendSuccess(() -> 
-                    getHelpComponent(commandName), false);
+                showHelpMessage(context.getSource());
                 return 1;
             }));
-            
-        // Add the base command which shows help
+        
+        // Base command shows help
         mainCommand.executes(context -> {
-            context.getSource().sendSuccess(() -> 
-                getHelpComponent(commandName), false);
+            showHelpMessage(context.getSource());
             return 1;
         });
         
-        // Register the complete command
         dispatcher.register(mainCommand);
     }
     
-    /**
-     * Creates the help text component
-     */
-    private static net.minecraft.network.chat.Component getHelpComponent(String commandName) {
-        return net.minecraft.network.chat.Component.literal("=== ItemTooltipEnhancer Commands ===")
-            .withStyle(net.minecraft.ChatFormatting.GOLD)
-            .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " gettexture [item] - Get texture path for an item")
-                .withStyle(net.minecraft.ChatFormatting.YELLOW))
-            .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " help - Show this help message")
-                .withStyle(net.minecraft.ChatFormatting.YELLOW));
+    private static void showHelpMessage(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("=== ItemTooltipEnhancer Commands ==="), false);
+        source.sendSuccess(() -> Component.literal("/ite editdisplayname <item> <name> - Set custom display name"), false);
+        source.sendSuccess(() -> Component.literal("/ite edittooltip <item> <line> <text> - Set tooltip line"), false);
+        source.sendSuccess(() -> Component.literal("/ite editrarity <item> <rarity> - Set item rarity"), false);
+        source.sendSuccess(() -> Component.literal("/ite reset [item] - Reset item to default state"), false); // Add help for reset command
+        source.sendSuccess(() -> Component.literal("/ite gettexture [item] - Get texture path for an item"), false);
+        source.sendSuccess(() -> Component.literal("/ite help - Show this help message"), false);
     }
 }

@@ -16,6 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +33,11 @@ public class ItemTooltipEventHandler {
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
         if (itemId == null) return;
         
+        // Apply custom data to the stack
+        RarityManager.applyCustomDataToItemStack(stack);
+        
         // Get rarity from RarityManager
         ItemRarity rarity = RarityManager.getRarity(item);
-
-        // Apply rarity color to item name
-        Component originalName = event.getItemStack().getHoverName();
-        Component coloredName = Component.literal(originalName.getString())
-                .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()));
-        event.getToolTip().set(0, coloredName);
         
         // Get item category
         String category = RarityManager.getItemCategory(item);
@@ -47,13 +46,28 @@ public class ItemTooltipEventHandler {
         Component rarityLine = Component.literal(rarity.getName().toUpperCase())
             .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
             
-        if (category != null && !category.isEmpty()) {
-            Component categoryLine = Component.literal(category)
-                .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
-            event.getToolTip().add(1, categoryLine);
-            event.getToolTip().add(2, rarityLine);
-        } else {
-            event.getToolTip().add(1, rarityLine);
+        // Add rarity line and category if it exists - check if we already have this line
+        boolean hasRarityLine = false;
+        for (Component line : event.getToolTip()) {
+            if (line.getString().equals(rarity.getName().toUpperCase())) {
+                // Check if color matches - need to check if colors are available first
+                if (line.getStyle().getColor() != null && 
+                    line.getStyle().getColor().getValue() == rarity.getColor().getColor()) {
+                    hasRarityLine = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!hasRarityLine) {
+            if (category != null && !category.isEmpty()) {
+                Component categoryLine = Component.literal(category)
+                    .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
+                event.getToolTip().add(1, categoryLine);
+                event.getToolTip().add(2, rarityLine);
+            } else {
+                event.getToolTip().add(1, rarityLine);
+            }
         }
         
         // Remove mod name from tooltip
