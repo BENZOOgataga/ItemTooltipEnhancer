@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.flazesmp.flazesmpitems.command.commands.GetTextureCommand;
+import net.flazesmp.flazesmpitems.command.commands.GuiCommand;
+import net.flazesmp.flazesmpitems.command.commands.ReloadCommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -47,6 +49,8 @@ public class ModCommands {
         // Add all subcommands to the main command
         // Each subcommand is responsible for attaching itself to the provided builder
         GetTextureCommand.register(mainCommand, buildContext);
+        GuiCommand.register(mainCommand, buildContext);
+        ReloadCommand.register(mainCommand, buildContext);
         
         // Add help command
         mainCommand.then(Commands.literal("help")
@@ -74,6 +78,10 @@ public class ModCommands {
         return net.minecraft.network.chat.Component.literal("=== ItemTooltipEnhancer Commands ===")
             .withStyle(net.minecraft.ChatFormatting.GOLD)
             .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " gettexture [item] - Get texture path for an item")
+                .withStyle(net.minecraft.ChatFormatting.YELLOW))
+            .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " gui - Open item management GUI")
+                .withStyle(net.minecraft.ChatFormatting.YELLOW))
+            .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " reload - Reload item configurations")
                 .withStyle(net.minecraft.ChatFormatting.YELLOW))
             .append(net.minecraft.network.chat.Component.literal("\n/" + commandName + " help - Show this help message")
                 .withStyle(net.minecraft.ChatFormatting.YELLOW));
