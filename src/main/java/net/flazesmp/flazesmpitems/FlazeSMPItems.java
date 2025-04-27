@@ -1,9 +1,7 @@
 package net.flazesmp.flazesmpitems;
 
 import com.mojang.logging.LogUtils;
-import net.flazesmp.flazesmpitems.item.CustomItemManager;
 import net.flazesmp.flazesmpitems.item.ModItems;
-import net.flazesmp.flazesmpitems.networking.ModMessages;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -24,7 +22,8 @@ public class FlazeSMPItems {
     public FlazeSMPItems() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
-        // Register item registry
+        // Register item registry - even though we don't have test items anymore,
+        // we keep this for future extensibility
         ModItems.register(modEventBus);
         
         modEventBus.addListener(this::commonSetup);
@@ -35,14 +34,12 @@ public class FlazeSMPItems {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("ItemTooltipEnhancer: Initializing rarity system");
-        event.enqueueWork(() -> {
-            RarityManager.initialize();
-            ModMessages.register();
-        });
+        event.enqueueWork(RarityManager::initialize);
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        // Server starting code if needed
         LOGGER.info("ItemTooltipEnhancer: Server starting");
     }
 
