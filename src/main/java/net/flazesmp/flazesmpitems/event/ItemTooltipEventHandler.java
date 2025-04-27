@@ -93,15 +93,30 @@ public class ItemTooltipEventHandler {
         // Get item category
         String category = RarityManager.getItemCategory(item);
         
-        // Create rarity component
-        Component rarityLine = Component.literal(rarity.getName().toUpperCase())
-            .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
-            
+        // Get the item type suffix (use getItemTypeSuffix instead of determineItemTypeSuffix)
+        String itemTypeSuffix = RarityManager.getItemTypeSuffix(item);
+        
+        // Create rarity component with suffix if available
+        Component rarityLine;
+        if (itemTypeSuffix != null && !itemTypeSuffix.isEmpty()) {
+            rarityLine = Component.literal(rarity.getName().toUpperCase() + " " + itemTypeSuffix)
+                .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
+        } else {
+            rarityLine = Component.literal(rarity.getName().toUpperCase())
+                .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
+        }
+        
         // Check if rarity is already shown (from previous runs)
+        // We need to update this check to account for the suffix
         boolean hasRarityLine = tooltip.stream().anyMatch(line -> {
-            if (line.getString().equals(rarity.getName().toUpperCase()) && 
-                line.getStyle().getColor() != null) {
-                return line.getStyle().getColor().getValue() == rarity.getColor().getColor();
+            if (line.getStyle().getColor() != null && 
+                line.getStyle().getColor().getValue() == rarity.getColor().getColor() &&
+                line.getStyle().isBold()) {
+                
+                String lineText = line.getString();
+                String rarityPrefix = rarity.getName().toUpperCase();
+                // Check if line starts with the rarity name
+                return lineText.startsWith(rarityPrefix);
             }
             return false;
         });

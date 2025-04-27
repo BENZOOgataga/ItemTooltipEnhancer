@@ -8,18 +8,32 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DiggerItem;
+import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.block.AnvilBlock;
+import net.minecraft.world.level.block.BeaconBlock;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.EnchantmentTableBlock;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
 
@@ -672,5 +686,153 @@ public class RarityManager {
                CUSTOM_NAMES.containsKey(id) ||
                TOOLTIPS.containsKey(id) ||
                ITEM_CATEGORIES.containsKey(id);
+    }
+
+    /**
+     * Gets the appropriate type suffix for an item, with support for custom overrides
+     * 
+     * @param item The item to check
+     * @return The item type suffix, or empty string if no specific type
+     */
+    public static String getItemTypeSuffix(Item item) {
+        // Check for custom suffix first
+        String customSuffix = ConfigManager.getCustomTypeSuffix(item);
+        if (customSuffix != null && !customSuffix.isEmpty()) {
+            return customSuffix;
+        }
+        
+        // Otherwise use automatic detection
+        return determineItemTypeSuffix(item);
+    }
+
+    /**
+     * Determines the appropriate type suffix for an item
+     * 
+     * @param item The item to check
+     * @return The item type suffix, or empty string if no specific type
+     */
+    private static String determineItemTypeSuffix(Item item) {
+        // Weapons
+        if (item instanceof SwordItem) {
+            return "SWORD";
+        } else if (item == Items.BOW) {
+            return "BOW";
+        } else if (item == Items.CROSSBOW) {
+            return "CROSSBOW";
+        } else if (item == Items.TRIDENT) {
+            return "TRIDENT";
+        } else if (item instanceof AxeItem && ((AxeItem)item).getTier() != Tiers.WOOD) {
+            // Only consider non-wooden axes as weapons
+            return "AXE";
+        }
+        
+        // Tools
+        if (item instanceof PickaxeItem) {
+            return "PICKAXE";
+        } else if (item instanceof ShovelItem) {
+            return "SHOVEL";
+        } else if (item instanceof HoeItem) {
+            return "HOE";
+        } else if (item instanceof AxeItem) { // Wooden axes are considered tools
+            return "AXE";
+        } else if (item instanceof ShearsItem) {
+            return "SHEARS";
+        } else if (item == Items.FISHING_ROD) {
+            return "FISHING ROD";
+        } else if (item == Items.FLINT_AND_STEEL) {
+            return "FLINT AND STEEL";
+        }
+        
+        // Armor
+        if (item instanceof ArmorItem) {
+            ArmorItem armorItem = (ArmorItem)item;
+            switch (armorItem.getEquipmentSlot()) {
+                case HEAD: return "HELMET";
+                case CHEST: return "CHESTPLATE";
+                case LEGS: return "LEGGINGS";
+                case FEET: return "BOOTS";
+                default: return "ARMOR";
+            }
+        }
+        
+        // Elytra is special
+        if (item == Items.ELYTRA) {
+            return "CHESTPLATE";
+        }
+        
+        // Shields
+        if (item == Items.SHIELD) {
+            return "SHIELD";
+        }
+        
+        // Consumables
+        if (item.isEdible()) {
+            if (item == Items.GOLDEN_APPLE || item == Items.ENCHANTED_GOLDEN_APPLE) {
+                return "APPLE";
+            } else if (item == Items.POTION || item == Items.SPLASH_POTION || 
+                       item == Items.LINGERING_POTION) {
+                return "POTION";
+            } else {
+                return "FOOD";
+            }
+        }
+        
+        // Special items
+        if (item == Items.TOTEM_OF_UNDYING) {
+            return "ARTIFACT";
+        } else if (item.getDescriptionId().contains("music_disc")) {
+            return "MUSIC DISC";
+        } else if (item instanceof BlockItem) {
+            Block block = ((BlockItem)item).getBlock();
+            // Check for special blocks
+            if (block instanceof ChestBlock) {
+                return "CHEST";
+            } else if (block instanceof EnchantmentTableBlock) {
+                return "TABLE";
+            } else if (block instanceof AnvilBlock) {
+                return "ANVIL";
+            } else if (block instanceof BedBlock) {
+                return "BED";
+            } else if (block instanceof BeaconBlock) {
+                return "BEACON";
+            }
+            // Generic block
+            return "BLOCK";
+        }
+        
+        // Try to determine based on item name
+        String itemName = item.getDescriptionId().toLowerCase();
+        if (itemName.contains("helmet")) {
+            return "HELMET";
+        } else if (itemName.contains("chestplate")) {
+            return "CHESTPLATE"; 
+        } else if (itemName.contains("leggings")) {
+            return "LEGGINGS";
+        } else if (itemName.contains("boots")) {
+            return "BOOTS";
+        } else if (itemName.contains("sword")) {
+            return "SWORD";
+        } else if (itemName.contains("pickaxe")) {
+            return "PICKAXE";
+        } else if (itemName.contains("axe")) {
+            return "AXE";
+        } else if (itemName.contains("shovel") || itemName.contains("spade")) {
+            return "SHOVEL";
+        } else if (itemName.contains("hoe")) {
+            return "HOE";
+        } else if (itemName.contains("bow") && !itemName.contains("bowl")) {
+            return "BOW";
+        }
+        
+        // Additional categorization for common items
+        if (item == Items.DIAMOND || item == Items.EMERALD || item == Items.GOLD_INGOT || 
+            item == Items.IRON_INGOT || item == Items.NETHERITE_INGOT) {
+            return "GEM";
+        } else if (item instanceof ItemNameBlockItem) { // This includes most seeds and saplings
+            return "MATERIAL";
+        }
+        
+        // No specific type detected
+        return "";
     }
 }

@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConfigManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigManager.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Map<ResourceLocation, String> CUSTOM_TYPE_SUFFIXES = new HashMap<>();
     
     // Fix the config directory path - directly in config/itemtooltipenhancer/
     private static final String CONFIG_DIR = "itemtooltipenhancer";
@@ -80,6 +81,10 @@ public class ConfigManager {
             "  // Rarity affects text color if no color codes are used (optional)\n" +
             "  // Valid values: COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC, SPECIAL, ADMIN\n" +
             "  \"rarity\": \"RARE\",\n" +
+            "\n" +
+            "  // Custom type suffix to appear after rarity (optional, defaults to automatic detection)\n" +
+            "  // Example: SWORD, PICKAXE, HELMET, CHESTPLATE, etc. (will be displayed in uppercase)\n" +
+            "  \"typeSuffix\": \"APPLE\",\n" +
             "\n" +
             "  // Category to display at the bottom of the tooltip (optional)\n" +
             "  \"category\": \"Magic Food\",\n" +
@@ -198,6 +203,12 @@ public class ConfigManager {
                 });
             }
             
+            // Load custom type suffix if specified
+            if (json.has("typeSuffix")) {
+                String typeSuffix = json.get("typeSuffix").getAsString().toUpperCase();
+                CUSTOM_TYPE_SUFFIXES.put(resourceLocation, typeSuffix);
+            }
+            
             LOGGER.debug("Loaded config for item {} from file {}", itemId, file.getName());
             return true;
             
@@ -260,6 +271,12 @@ public class ConfigManager {
                 json.add("tooltips", tooltipsJson);
             }
             
+            // Add custom type suffix if set
+            String typeSuffix = getCustomTypeSuffix(item);
+            if (typeSuffix != null && !typeSuffix.isEmpty()) {
+                json.addProperty("typeSuffix", typeSuffix);
+            }
+            
             // Ensure the parent directory exists
             Files.createDirectories(filePath.getParent());
             
@@ -296,5 +313,19 @@ public class ConfigManager {
         } catch (IOException e) {
             LOGGER.error("Failed to delete config file for item {}", itemId, e);
         }
+    }
+    
+    public static void setCustomTypeSuffix(Item item, String suffix) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        if (suffix != null && !suffix.isEmpty()) {
+            CUSTOM_TYPE_SUFFIXES.put(id, suffix.toUpperCase());
+        } else {
+            CUSTOM_TYPE_SUFFIXES.remove(id);
+        }
+    }
+    
+    public static String getCustomTypeSuffix(Item item) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        return CUSTOM_TYPE_SUFFIXES.get(id);
     }
 }
