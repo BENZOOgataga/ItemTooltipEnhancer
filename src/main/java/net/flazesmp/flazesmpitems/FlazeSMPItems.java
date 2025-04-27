@@ -1,9 +1,10 @@
 package net.flazesmp.flazesmpitems;
 
 import com.mojang.logging.LogUtils;
+import net.flazesmp.flazesmpitems.event.ItemTooltipEventHandler;
+import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -20,29 +21,28 @@ public class FlazeSMPItems {
 
     public FlazeSMPItems() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        
         modEventBus.addListener(this::commonSetup);
+
         MinecraftForge.EVENT_BUS.register(this);
-        modEventBus.addListener(this::addCreative);
+        MinecraftForge.EVENT_BUS.register(new ItemTooltipEventHandler());
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // common setup code here
-    }
-
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        // add creative tab items here
+        LOGGER.info("ItemTooltipEnhancer: Initializing rarity system");
+        RarityManager.initialize();
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // server starting code here
+        // Server starting code
     }
 
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // client setup code here
+            // Client setup code
         }
     }
 }
