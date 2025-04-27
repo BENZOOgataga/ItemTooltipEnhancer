@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
+import net.flazesmp.flazesmpitems.tooltip.TooltipConfig;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.resources.ResourceLocation;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -40,23 +42,10 @@ public class ConfigManager {
     public static void initialize() {
         LOGGER.info("Initializing ItemTooltipEnhancer config system");
         
-        // Create config directory if it doesn't exist
-        Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
-        try {
-            Files.createDirectories(configDir);
-            LOGGER.info("Created config directory at {}", configDir);
-            
-            // Create example config file if it doesn't exist
-            Path exampleFile = configDir.resolve(EXAMPLE_FILE);
-            if (!Files.exists(exampleFile)) {
-                createExampleConfigFile(exampleFile);
-                LOGGER.info("Created example config file at {}", exampleFile);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Failed to create config directory or example file", e);
-        }
+        // Vérifier et réparer la configuration si nécessaire
+        checkAndRepairConfig();
         
-        // Load all config files
+        // Charger toutes les configurations
         loadAllConfigs();
     }
     
@@ -107,12 +96,21 @@ public class ConfigManager {
      * Load all item configs from the config directory
      */
     public static void loadAllConfigs() {
+        LOGGER.info("Loading all configurations...");
+        
+        // Ensure config directory exists before trying to read files
         Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
         File directory = configDir.toFile();
         
         if (!directory.exists() || !directory.isDirectory()) {
             LOGGER.warn("Config directory doesn't exist: {}", configDir);
-            return;
+            try {
+                Files.createDirectories(configDir);
+                LOGGER.info("Created config directory at {}", configDir);
+            } catch (IOException e) {
+                LOGGER.error("Failed to create config directory: {}", e.getMessage());
+                return;
+            }
         }
         
         // Process all JSON files in the directory
@@ -327,5 +325,86 @@ public class ConfigManager {
     public static String getCustomTypeSuffix(Item item) {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
         return CUSTOM_TYPE_SUFFIXES.get(id);
+    }
+    
+    /**
+     * Check configuration integrity and repair if needed
+     */
+    public static void checkAndRepairConfig() {
+        LOGGER.info("Checking configuration integrity...");
+        boolean needsRepair = false;
+        
+        // Check main config directory
+        Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
+        if (!Files.exists(configDir)) {
+            LOGGER.warn("Config directory is missing! Will recreate.");
+            needsRepair = true;
+        }
+        
+        // Check tooltip config file in Forge config directory
+        Path tooltipConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-tooltips.toml");
+        if (!Files.exists(tooltipConfigFile)) {
+            LOGGER.warn("Tooltip config file is missing! Will recreate.");
+            needsRepair = true;
+            
+            // Recreate the tooltips.toml file directly
+            try {
+                // Create the file with default content
+                Files.createDirectories(tooltipConfigFile.getParent());
+                
+                // Default content for the tooltips.toml file
+                String defaultContent = 
+                    "# ItemTooltipEnhancer Configuration File\n" +
+                    "# This file contains settings for tooltips and item display\n\n" +
+                    "[general]\n" +
+                    "# Enable or disable Hypixel-style item tooltips\n" +
+                    "enableHypixelStyle = true\n\n" +
+                    "[display]\n" +
+                    "# Enable or disable showing item rarities\n" +
+                    "showRarity = true\n\n" +
+                    "# Enable or disable showing item categories\n" +
+                    "showCategory = true\n\n" +
+                    "# Enable or disable showing custom names\n" +
+                    "showCustomName = true\n\n" +
+                    "[tooltips]\n" +
+                    "# Enable or disable stat formatting\n" +
+                    "enableStatFormatting = true\n\n" +
+                    "# Show header before stats\n" +
+                    "showStatHeader = false\n\n" +
+                    "# Text to show in the stat header\n" +
+                    "statHeaderText = \"&9&lSTATS\"\n";
+                
+                Files.writeString(tooltipConfigFile, defaultContent, StandardCharsets.UTF_8);
+                LOGGER.info("Created default tooltip config file at {}", tooltipConfigFile);
+            } catch (IOException e) {
+                LOGGER.error("Failed to create tooltip config file", e);
+            }
+        }
+
+        // If issues were found, repair the configuration
+        if (needsRepair) {
+            LOGGER.info("Repairing configuration...");
+            try {
+                // Create the directory structure
+                Files.createDirectories(configDir);
+                LOGGER.info("Created config directory at {}", configDir);
+                
+                // Create example file if it doesn't exist
+                Path exampleFile = configDir.resolve(EXAMPLE_FILE);
+                if (!Files.exists(exampleFile)) {
+                    createExampleConfigFile(exampleFile);
+                    LOGGER.info("Created example config file at {}", exampleFile);
+                }
+                
+                // Load configs after repair
+                loadAllConfigs();
+                
+                LOGGER.info("Configuration repair complete.");
+            } catch (IOException e) {
+                LOGGER.error("Failed to repair configuration", e);
+            }
+        } else {
+            LOGGER.info("Configuration integrity check passed.");
+        }
     }
 }
