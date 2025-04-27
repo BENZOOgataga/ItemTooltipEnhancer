@@ -1,9 +1,7 @@
 package net.flazesmp.flazesmpitems;
 
 import com.mojang.logging.LogUtils;
-import net.flazesmp.flazesmpitems.config.CustomItemsConfig;
 import net.flazesmp.flazesmpitems.item.ModItems;
-import net.flazesmp.flazesmpitems.network.NetworkHandler;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -35,12 +33,6 @@ public class FlazeSMPItems {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("ItemTooltipEnhancer: Initializing network handler");
-        NetworkHandler.init();
-        
-        LOGGER.info("ItemTooltipEnhancer: Loading custom items configuration");
-        event.enqueueWork(CustomItemsConfig::load);
-        
         LOGGER.info("ItemTooltipEnhancer: Initializing rarity system");
         event.enqueueWork(RarityManager::initialize);
     }
@@ -49,9 +41,6 @@ public class FlazeSMPItems {
     public void onServerStarting(ServerStartingEvent event) {
         // Server starting code if needed
         LOGGER.info("ItemTooltipEnhancer: Server starting");
-        
-        // Reload custom items config on server start
-        CustomItemsConfig.load();
     }
 
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -59,7 +48,6 @@ public class FlazeSMPItems {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             // No specific client setup needed at this point
-            LOGGER.info("ItemTooltipEnhancer: Client setup");
         }
     }
 }

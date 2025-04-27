@@ -6,31 +6,5 @@
   "itemrarity.legendary": "Legendary",
   "itemrarity.special": "Special",
   "itemrarity.mythic": "Mythic",
-  "itemrarity.admin": "Admin",
-
-  "itemtooltipenhancer.gui.browser.title": "Item Browser",
-  "itemtooltipenhancer.gui.editor.title": "Item Editor",
-  "itemtooltipenhancer.gui.message.title": "Message",
-  
-  "itemtooltipenhancer.gui.search": "Search...",
-  "itemtooltipenhancer.gui.showAll": "Show All Items",
-  "itemtooltipenhancer.gui.showCustomOnly": "Show Custom Items Only",
-  
-  "itemtooltipenhancer.gui.editor.displayName": "Display Name",
-  "itemtooltipenhancer.gui.editor.tooltip": "Tooltip Lines",
-  "itemtooltipenhancer.gui.editor.tooltipLine": "Line %s",
-  "itemtooltipenhancer.gui.editor.rarity": "Rarity",
-  
-  "itemtooltipenhancer.gui.editor.save": "Save",
-  "itemtooltipenhancer.gui.editor.cancel": "Cancel",
-  "itemtooltipenhancer.gui.editor.delete": "Delete",
-  
-  "itemtooltipenhancer.gui.editor.cannotDelete": "Cannot Delete Item",
-  "itemtooltipenhancer.gui.editor.cannotDeleteInfo": "Only items created by this mod can be deleted. You can still customize this item's appearance.",
-  
-  "itemtooltipenhancer.command.playerOnly": "This command can only be used by a player",
-  "itemtooltipenhancer.command.reload.success": "ItemTooltipEnhancer configuration reloaded successfully",
-  
-  "itemtooltipenhancer.commands.gui.description": "Open the item management GUI",
-  "itemtooltipenhancer.commands.reload.description": "Reload item configurations"
+  "itemrarity.admin": "Admin"
 }
