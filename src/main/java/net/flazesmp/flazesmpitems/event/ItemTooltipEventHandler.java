@@ -1,6 +1,7 @@
 package net.flazesmp.flazesmpitems.event;
 
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
+import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
@@ -60,11 +61,8 @@ public class ItemTooltipEventHandler {
         // Apply custom data to the stack
         RarityManager.applyCustomDataToItemStack(stack);
         
-        // Get rarity from RarityManager
-        ItemRarity rarity = RarityManager.getRarity(item);
-        
-        // Get item category
-        String category = RarityManager.getItemCategory(item);
+        // Process the tooltip with our stat formatter (do this first)
+        boolean statsChanged = StatTooltipFormatter.processTooltip(tooltip, stack);
         
         // Remove vanilla categories and mod names
         removeUnwantedTooltipLines(tooltip);
@@ -88,6 +86,12 @@ public class ItemTooltipEventHandler {
             // Add a blank line after custom tooltips section
             tooltip.add(Component.literal(""));
         }
+        
+        // Get rarity from RarityManager
+        ItemRarity rarity = RarityManager.getRarity(item);
+        
+        // Get item category
+        String category = RarityManager.getItemCategory(item);
         
         // Create rarity component
         Component rarityLine = Component.literal(rarity.getName().toUpperCase())
