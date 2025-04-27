@@ -1,23 +1,112 @@
 package net.flazesmp.flazesmpitems.util;
 
 import net.minecraft.world.item.*;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.ForgeRegistries;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class RarityManager {
     private static final Map<Item, ItemRarity> ITEM_RARITY_MAP = new HashMap<>();
+    private static final Map<Item, String> ITEM_CATEGORY_MAP = new HashMap<>();
+    
+    // Categories based on vanilla groups
+    private static final Map<String, String> CATEGORY_MAPPING = new HashMap<>();
+    
+    static {
+        // Initialize category mappings
+        CATEGORY_MAPPING.put("building_blocks", "Building Blocks");
+        CATEGORY_MAPPING.put("decorations", "Decoration");
+        CATEGORY_MAPPING.put("redstone", "Redstone");
+        CATEGORY_MAPPING.put("transportation", "Transportation");
+        CATEGORY_MAPPING.put("misc", "Miscellaneous");
+        CATEGORY_MAPPING.put("food", "Food");
+        CATEGORY_MAPPING.put("tools", "Tools");
+        CATEGORY_MAPPING.put("combat", "Combat");
+        CATEGORY_MAPPING.put("brewing", "Brewing");
+        CATEGORY_MAPPING.put("materials", "Materials");
+        CATEGORY_MAPPING.put("spawn_eggs", "Spawn Eggs");
+    }
 
     public static void initialize() {
         // Assign rarities to all registered items
         ForgeRegistries.ITEMS.forEach(item -> {
             ItemRarity rarity = determineRarity(item);
             ITEM_RARITY_MAP.put(item, rarity);
+            
+            // Determine category and store it
+            String category = determineCategory(item);
+            if (category != null) {
+                ITEM_CATEGORY_MAP.put(item, category);
+            }
         });
     }
 
     public static ItemRarity getRarity(Item item) {
         return ITEM_RARITY_MAP.getOrDefault(item, ItemRarity.COMMON);
+    }
+    
+    public static String getItemCategory(Item item) {
+        return ITEM_CATEGORY_MAP.get(item);
+    }
+    
+    private static String determineCategory(Item item) {
+        // Try to determine category based on item properties
+        if (item instanceof ArmorItem) {
+            return "Armor";
+        } else if (item instanceof SwordItem) {
+            return "Weapons";
+        } else if (item instanceof TieredItem) {
+            if (item instanceof AxeItem) {
+                return "Tools";
+            } else if (item instanceof PickaxeItem) {
+                return "Tools";
+            } else if (item instanceof ShovelItem) {
+                return "Tools";
+            } else if (item instanceof HoeItem) {
+                return "Tools";
+            }
+        } else if (item instanceof BlockItem) {
+            return "Blocks";
+        } else if (item instanceof PotionItem || item == Items.BREWING_STAND) {
+            return "Brewing";
+        } else if (item.isEdible()) {
+            return "Food";
+        } else if (item instanceof EnchantedBookItem) {
+            return "Enchanted Books";
+        }
+        
+        // Special cases
+        if (item == Items.IRON_INGOT || item == Items.GOLD_INGOT || item == Items.DIAMOND ||
+            item == Items.EMERALD || item == Items.NETHERITE_INGOT || item == Items.COAL ||
+            item == Items.REDSTONE || item == Items.LAPIS_LAZULI || item == Items.QUARTZ) {
+            return "Materials";
+        }
+        
+        // For items where we can't determine a clear category
+        ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(item);
+        if (registryName != null) {
+            String path = registryName.getPath();
+            
+            // Try to infer category based on item name
+            if (path.contains("_sword") || path.contains("_axe") || path.contains("bow") ||
+                path.contains("arrow") || path.contains("shield")) {
+                return "Weapons";
+            } else if (path.contains("_pickaxe") || path.contains("_shovel") || path.contains("_hoe")) {
+                return "Tools";
+            } else if (path.contains("_helmet") || path.contains("_chestplate") || 
+                       path.contains("_leggings") || path.contains("_boots")) {
+                return "Armor";
+            } else if (path.contains("potion") || path.contains("brew")) {
+                return "Brewing";
+            }
+        }
+        
+        return null;
     }
 
     private static ItemRarity determineRarity(Item item) {
