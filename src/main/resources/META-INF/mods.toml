@@ -5,28 +5,32 @@
 # Find more information on toml format here:  https://github.com/toml-lang/toml
 # The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
 modLoader="javafml"
-loaderVersion="${loader_version_range}"
-license="All Rights Reserved"
+loaderVersion="[47,)"
+license="MIT"
 
 [[mods]]
 modId="itemtooltipenhancer"
-version="${mod_version}"
+version="1.0.0"
 displayName="Item Tooltip Enhancer"
-authors="BENZOOgataga, FlazeSMPDevTeam"
+authors="Your Name"
 description='''
-Enhances item tooltips with rarity information similar to Hypixel Skyblock.
+A mod that enhances item tooltips with custom rarities, categories, and more.
 '''
 
-[[dependencies.itemtooltipenhancer]]
-    modId="forge"
-    mandatory=true
-    versionRange="${forge_version_range}"
-    ordering="NONE"
-    side="BOTH"
+# Make sure this matches your package structure exactly
+[[mods.itemtooltipenhancer]]
+modClass="net.flazesmp.flazesmpitems.FlazeSMPItems"
 
 [[dependencies.itemtooltipenhancer]]
-    modId="minecraft"
-    mandatory=true
-    versionRange="${minecraft_version_range}"
-    ordering="NONE"
-    side="BOTH"
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.itemtooltipenhancer]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"

@@ -4,7 +4,7 @@
   "itemrarity.rare": "Rare",
   "itemrarity.epic": "Epic",
   "itemrarity.legendary": "Legendary",
-  "itemrarity.special": "Special",
   "itemrarity.mythic": "Mythic",
+  "itemrarity.special": "Special",
   "itemrarity.admin": "Admin"
 }

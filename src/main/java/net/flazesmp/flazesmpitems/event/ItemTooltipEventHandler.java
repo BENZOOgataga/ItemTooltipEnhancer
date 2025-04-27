@@ -15,20 +15,44 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Mod.EventBusSubscriber(modid = FlazeSMPItems.MOD_ID)
 public class ItemTooltipEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ItemTooltipEventHandler.class);
+    
+    // Common vanilla category names
+    private static final Set<String> VANILLA_CATEGORIES = new HashSet<>(Arrays.asList(
+        "tools & utilities", 
+        "combat",
+        "building blocks", 
+        "decoration blocks", 
+        "redstone & logic",
+        "food & drinks", 
+        "ingredients",
+        "spawn eggs", 
+        "ores & resources", 
+        "miscellaneous",
+        "redstone",
+        "transportation"
+    ));
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         Item item = stack.getItem();
+        List<Component> tooltip = event.getToolTip();
+        
+        if (tooltip == null || tooltip.isEmpty()) {
+            return;
+        }
         
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
         if (itemId == null) return;
@@ -42,45 +66,97 @@ public class ItemTooltipEventHandler {
         // Get item category
         String category = RarityManager.getItemCategory(item);
         
+        // Remove vanilla categories and mod names
+        removeUnwantedTooltipLines(tooltip);
+
+        // Get custom tooltips
+        Map<Integer, String> customTooltips = RarityManager.getTooltipLines(item);
+        
+        // Add custom tooltips with spacing if they exist
+        if (customTooltips != null && !customTooltips.isEmpty()) {
+            // Add a blank line before custom tooltips section
+            tooltip.add(Component.literal(""));
+            
+            // Add all custom tooltips in order
+            for (int i = 1; i <= customTooltips.size(); i++) {
+                String tooltipText = customTooltips.get(i);
+                if (tooltipText != null && !tooltipText.isEmpty()) {
+                    tooltip.add(Component.literal(tooltipText));
+                }
+            }
+            
+            // Add a blank line after custom tooltips section
+            tooltip.add(Component.literal(""));
+        }
+        
         // Create rarity component
         Component rarityLine = Component.literal(rarity.getName().toUpperCase())
             .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
             
-        // Add rarity line and category if it exists - check if we already have this line
-        boolean hasRarityLine = false;
-        for (Component line : event.getToolTip()) {
-            if (line.getString().equals(rarity.getName().toUpperCase())) {
-                // Check if color matches - need to check if colors are available first
-                if (line.getStyle().getColor() != null && 
-                    line.getStyle().getColor().getValue() == rarity.getColor().getColor()) {
-                    hasRarityLine = true;
-                    break;
-                }
+        // Check if rarity is already shown (from previous runs)
+        boolean hasRarityLine = tooltip.stream().anyMatch(line -> {
+            if (line.getString().equals(rarity.getName().toUpperCase()) && 
+                line.getStyle().getColor() != null) {
+                return line.getStyle().getColor().getValue() == rarity.getColor().getColor();
             }
-        }
+            return false;
+        });
         
+        // If rarity not already in tooltip, add to the bottom
         if (!hasRarityLine) {
+            // If category exists, show it above rarity at the bottom
             if (category != null && !category.isEmpty()) {
                 Component categoryLine = Component.literal(category)
                     .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
-                event.getToolTip().add(1, categoryLine);
-                event.getToolTip().add(2, rarityLine);
-            } else {
-                event.getToolTip().add(1, rarityLine);
+                tooltip.add(categoryLine);
             }
+            
+            // Add rarity as the last element
+            tooltip.add(rarityLine);
         }
-        
-        // Remove mod name from tooltip
-        removeModNameFromTooltip(event.getToolTip());
     }
     
-    private static void removeModNameFromTooltip(List<Component> tooltip) {
-        if (tooltip.size() > 1) {
-            Component lastLine = tooltip.get(tooltip.size() - 1);
-            if (lastLine.getStyle().getColor() != null && 
-                (lastLine.getStyle().getColor().getValue() == ChatFormatting.BLUE.getColor() ||
-                 lastLine.getStyle().getColor().getValue() == ChatFormatting.AQUA.getColor())) {
-                tooltip.remove(tooltip.size() - 1);
+    /**
+     * Simple method to remove unwanted tooltip lines like mod names and vanilla categories
+     */
+    private static void removeUnwantedTooltipLines(List<Component> tooltip) {
+        if (tooltip == null || tooltip.isEmpty()) {
+            return;
+        }
+        
+        // Process the tooltip from the end since mod names are often at the end
+        Iterator<Component> iterator = tooltip.iterator();
+        while (iterator.hasNext()) {
+            Component line = iterator.next();
+            if (line == null) continue;
+            
+            String text = line.getString().trim().toLowerCase();
+            if (text.isEmpty()) continue;
+            
+            // Remove vanilla categories
+            if (VANILLA_CATEGORIES.contains(text)) {
+                iterator.remove();
+                continue;
+            }
+            
+            // Remove mod names - they're typically in blue or gray color
+            Style style = line.getStyle();
+            if (style != null && style.getColor() != null) {
+                int color = style.getColor().getValue();
+                
+                // Blue, aqua, or gray colors are typically used for mod names
+                if ((color == ChatFormatting.BLUE.getColor() || 
+                     color == ChatFormatting.AQUA.getColor() ||
+                     color == ChatFormatting.GRAY.getColor()) && 
+                    text.length() < 30) {
+                    
+                    // Additional check for common mod name content
+                    if (text.contains("minecraft") || 
+                        text.contains("forge") || 
+                        text.contains("mod")) {
+                        iterator.remove();
+                    }
+                }
             }
         }
     }
