@@ -12,7 +12,7 @@ public enum ItemRarity {
     EPIC("Epic", ChatFormatting.DARK_PURPLE),
     LEGENDARY("Legendary", ChatFormatting.GOLD),
     MYTHIC("Mythic", ChatFormatting.LIGHT_PURPLE),
-    SPECIAL("Special", ChatFormatting.AQUA),
+    SPECIAL("Special", ChatFormatting.RED),
     ADMIN("Admin", ChatFormatting.RED);
 
     private final String name;

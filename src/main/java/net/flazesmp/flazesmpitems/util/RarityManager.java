@@ -507,7 +507,8 @@ public class RarityManager {
      * @param stack The ItemStack to modify
      */
     public static void applyCustomDataToItemStack(ItemStack stack) {
-        if (stack.isEmpty()) {
+        // Add a check to prevent re-adding tooltips if they're already present
+        if (stack.isEmpty() || stack.hasTag() && stack.getTag().contains("TooltipProcessed")) {
             return;
         }
         
@@ -520,10 +521,12 @@ public class RarityManager {
             stack.setHoverName(Component.literal(customName));
         }
         
+        // Get tag outside the conditional block
+        CompoundTag tag = stack.getOrCreateTag();
+        
         // Apply tooltips if set
         Map<Integer, String> tooltipLines = TOOLTIPS.get(id);
         if (tooltipLines != null && !tooltipLines.isEmpty()) {
-            CompoundTag tag = stack.getOrCreateTag();
             CompoundTag display = tag.contains("display") ? 
                 tag.getCompound("display") : new CompoundTag();
                 
@@ -550,6 +553,9 @@ public class RarityManager {
                 tag.put("display", display);
             }
         }
+        
+        // Add a marker tag to avoid duplicate processing
+        tag.putBoolean("TooltipProcessed", true);
     }
 
     /**

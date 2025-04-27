@@ -265,8 +265,8 @@ public class ConfigManager {
             if (tooltips != null && !tooltips.isEmpty()) {
                 JsonObject tooltipsJson = new JsonObject();
                 tooltips.forEach((line, text) -> {
-                    // Convert § to & for readability
-                    tooltipsJson.addProperty(Integer.toString(line), text.replace('§', '&'));
+                    // Convert § back to & for readability in config files
+                    tooltipsJson.addProperty(line.toString(), text.replace('§', '&'));
                 });
                 json.add("tooltips", tooltipsJson);
             }

@@ -6,6 +6,7 @@ import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
@@ -59,8 +60,15 @@ public class ItemTooltipEventHandler {
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
         if (itemId == null) return;
         
-        // Apply custom data to the stack
-        RarityManager.applyCustomDataToItemStack(stack);
+        // Check if this stack has already been processed
+        CompoundTag tag = stack.getTag();
+        boolean alreadyProcessed = tag != null && tag.contains("TooltipProcessed");
+        
+        // Only apply custom data if not already processed
+        if (!alreadyProcessed) {
+            // Apply custom data to the stack
+            RarityManager.applyCustomDataToItemStack(stack);
+        }
         
         // Process the tooltip with our stat formatter (do this first)
         boolean statsChanged = StatTooltipFormatter.processTooltip(tooltip, stack);
@@ -68,6 +76,9 @@ public class ItemTooltipEventHandler {
         // Remove vanilla categories and mod names
         removeUnwantedTooltipLines(tooltip);
 
+        // Don't add custom tooltips here as they should be in NBT now
+        // Instead, check if we need to add rarity and category information
+        
         // Get custom tooltips
         Map<Integer, String> customTooltips = RarityManager.getTooltipLines(item);
         
