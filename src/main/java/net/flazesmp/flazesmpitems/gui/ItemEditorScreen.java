@@ -21,8 +21,18 @@ import java.util.List;
 
 public class ItemEditorScreen extends Screen {
     // GUI dimensions
-    private static final int GUI_WIDTH = 250;
-    private static final int GUI_HEIGHT = 220;
+    private static final int GUI_WIDTH = 260;
+    private static final int GUI_HEIGHT = 230;
+    private static final int HEADER_HEIGHT = 35;
+    
+    // Spacing constants
+    private static final int FIELD_HEIGHT = 20;
+    private static final int FIELD_SPACING = 30;
+    private static final int LABEL_PADDING = 8;
+    private static final int BUTTON_WIDTH = 100;
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_SPACING = 10;
+    private static final int BOTTOM_MARGIN = 15;
     
     // Colors
     private static final int BACKGROUND_COLOR = 0xB0000000;   // Semi-transparent black
@@ -34,6 +44,8 @@ public class ItemEditorScreen extends Screen {
     private static final int DIVIDER_COLOR = 0xFF606060;      // Divider line color
     private static final int FIELD_BG_COLOR = 0xFF202020;     // Text field background
     private static final int FIELD_BORDER = 0xFF505050;       // Text field border
+    private static final int FIELD_BORDER_FOCUS = 0xFF7089A9; // Focus border color
+    private static final int BUTTON_HOVER = 0xFF3D6185;       // Button hover color
     private static final int SLOT_BG_COLOR = 0xFF101010;      // Item slot background
     private static final int SLOT_BORDER = 0xFF505050;        // Item slot border
     
@@ -87,12 +99,16 @@ public class ItemEditorScreen extends Screen {
         this.guiLeft = (this.width - GUI_WIDTH) / 2;
         this.guiTop = (this.height - GUI_HEIGHT) / 2;
         
-        int labelWidth = 70;
-        int fieldX = this.guiLeft + labelWidth + 10;
+        // Calculate consistent field positions
+        int labelWidth = 80;
+        int fieldX = this.guiLeft + labelWidth + LABEL_PADDING;
         int fieldWidth = GUI_WIDTH - labelWidth - 30;
         
+        // Starting Y position for the first field
+        int currentY = this.guiTop + HEADER_HEIGHT + 10;
+        
         // Display name field
-        this.displayNameBox = new EditBox(this.font, fieldX, this.guiTop + 40, fieldWidth, 20,
+        this.displayNameBox = new EditBox(this.font, fieldX, currentY, fieldWidth, FIELD_HEIGHT,
                 Component.translatable("itemtooltipenhancer.gui.editor.displayName"));
         this.displayNameBox.setValue(this.displayName);
         this.displayNameBox.setMaxLength(100);
@@ -100,19 +116,23 @@ public class ItemEditorScreen extends Screen {
         this.displayNameBox.setTextColor(PRIMARY_TEXT);
         this.addRenderableWidget(this.displayNameBox);
         
+        // Move to tooltip section
+        currentY += FIELD_SPACING + 10;
+        
         // Tooltip lines
         this.tooltipLineBoxes.clear();
         if (this.tooltipLines.isEmpty()) {
             this.tooltipLines.add("");
         }
         
-        int tooltipStartY = this.guiTop + 85;
-        int tooltipLineHeight = 24;
+        int tooltipStartY = currentY;
+        int tooltipLineHeight = FIELD_HEIGHT + 5;
         int maxLines = Math.min(this.tooltipLines.size(), 5);
         
         for (int i = 0; i < maxLines; i++) {
             EditBox tooltipBox = new EditBox(this.font, fieldX, tooltipStartY + (i * tooltipLineHeight), 
-                    fieldWidth - 25, 20, Component.translatable("itemtooltipenhancer.gui.editor.tooltipLine", i + 1));
+                    fieldWidth - 25, FIELD_HEIGHT, 
+                    Component.translatable("itemtooltipenhancer.gui.editor.tooltipLine", i + 1));
             tooltipBox.setValue(this.tooltipLines.get(i));
             tooltipBox.setMaxLength(100);
             tooltipBox.setBordered(false);
@@ -128,11 +148,7 @@ public class ItemEditorScreen extends Screen {
                 this.init();
                 
                 // Play sound
-                Minecraft.getInstance().getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                    )
-                );
+                playSoundFeedback();
             }
         }).bounds(fieldX + fieldWidth - 22, tooltipStartY, 20, 20).build();
         
@@ -142,16 +158,15 @@ public class ItemEditorScreen extends Screen {
                 this.init();
                 
                 // Play sound
-                Minecraft.getInstance().getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                    )
-                );
+                playSoundFeedback();
             }
-        }).bounds(fieldX + fieldWidth - 22, tooltipStartY + 21, 20, 20).build();
+        }).bounds(fieldX + fieldWidth - 22, tooltipStartY + 22, 20, 20).build();
         
         this.addRenderableWidget(this.addTooltipLineButton);
         this.addRenderableWidget(this.removeTooltipLineButton);
+        
+        // Move to rarity section
+        currentY = tooltipStartY + (maxLines * tooltipLineHeight) + 20;
         
         // Rarity selection
         CycleButton.Builder<ItemRarity> builder = CycleButton.builder(rarity -> 
@@ -161,45 +176,33 @@ public class ItemEditorScreen extends Screen {
         this.rarityButton = builder
                 .withValues(ItemRarity.values())
                 .withInitialValue(this.rarity)
-                .create(fieldX, this.guiTop + 175, fieldWidth, 20, Component.empty(), (button, value) -> {
-                    this.rarity = value;
-                });
+                .create(fieldX, currentY, fieldWidth, FIELD_HEIGHT, 
+                        Component.translatable("itemtooltipenhancer.gui.editor.rarity"),
+                        (button, value) -> {
+                            this.rarity = value;
+                        });
         this.addRenderableWidget(this.rarityButton);
         
-        // Bottom buttons
-        int buttonWidth = 70;
-        int buttonSpacing = 10;
-        int buttonsY = this.guiTop + GUI_HEIGHT - 30;
-        int buttonsStartX = this.guiLeft + (GUI_WIDTH / 2) - buttonWidth - (buttonSpacing / 2);
+        // Bottom buttons - centered and properly sized
+        int totalButtonWidth = (BUTTON_WIDTH * 2) + BUTTON_SPACING;
+        int buttonsY = this.guiTop + GUI_HEIGHT - BUTTON_HEIGHT - BOTTOM_MARGIN;
+        int buttonsStartX = this.width / 2 - totalButtonWidth / 2;
         
         this.saveButton = Button.builder(Component.translatable("itemtooltipenhancer.gui.editor.save"), button -> {
             saveChanges();
-            
-            // Play sound
-            Minecraft.getInstance().getSoundManager().play(
-                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                    net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                )
-            );
-            
+            playSoundFeedback();
             Minecraft.getInstance().setScreen(this.parentScreen);
-        }).bounds(buttonsStartX, buttonsY, buttonWidth, 20).build();
+        }).bounds(buttonsStartX, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         
         this.cancelButton = Button.builder(Component.translatable("itemtooltipenhancer.gui.editor.cancel"), button -> {
-            // Play sound
-            Minecraft.getInstance().getSoundManager().play(
-                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                    net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                )
-            );
-            
+            playSoundFeedback();
             Minecraft.getInstance().setScreen(this.parentScreen);
-        }).bounds(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, 20).build();
+        }).bounds(buttonsStartX + BUTTON_WIDTH + BUTTON_SPACING, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT).build();
         
         this.addRenderableWidget(this.saveButton);
         this.addRenderableWidget(this.cancelButton);
         
-        // Delete button
+        // Delete button in the top right corner
         this.deleteButton = Button.builder(Component.translatable("itemtooltipenhancer.gui.editor.delete"), button -> {
             if (this.isModItem) {
                 NetworkHandler.sendToServer(new UpdateItemPacket(this.itemId, null, null, null, true));
@@ -219,7 +222,7 @@ public class ItemEditorScreen extends Screen {
                     this
                 ));
             }
-        }).bounds(this.guiLeft + GUI_WIDTH - 65, this.guiTop + 10, 55, 20).build();
+        }).bounds(this.guiLeft + GUI_WIDTH - 65, this.guiTop + 5, 55, 20).build();
         
         this.deleteButton.active = this.isModItem;
         this.addRenderableWidget(this.deleteButton);
@@ -243,33 +246,32 @@ public class ItemEditorScreen extends Screen {
     // Draw a rounded rectangle
     private void drawRoundedRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int radius, int color) {
         // Draw main rectangle (excluding corners)
-        guiGraphics.fill(x + radius, y, x + width - radius, y + height, color); // Top and bottom horizontal rectangles
-        guiGraphics.fill(x, y + radius, x + width, y + height - radius, color); // Left and right vertical rectangles
+        guiGraphics.fill(x + radius, y, x + width - radius, y + height, color);
+        guiGraphics.fill(x, y + radius, x + width, y + height - radius, color);
         
         // Draw corners
         for (int i = 0; i < radius; i++) {
             int cornerWidth = radius - i;
-            // Top-left corner
             guiGraphics.fill(x + i, y + radius - cornerWidth, x + i + 1, y + radius, color);
-            // Top-right corner
             guiGraphics.fill(x + width - i - 1, y + radius - cornerWidth, x + width - i, y + radius, color);
-            // Bottom-left corner
             guiGraphics.fill(x + i, y + height - radius, x + i + 1, y + height - radius + cornerWidth, color);
-            // Bottom-right corner
             guiGraphics.fill(x + width - i - 1, y + height - radius, x + width - i, y + height - radius + cornerWidth, color);
         }
     }
     
     // Draw a field background
-    private void drawFieldBackground(GuiGraphics guiGraphics, int x, int y, int width, int height) {
+    private void drawFieldBackground(GuiGraphics guiGraphics, int x, int y, int width, int height, boolean isFocused) {
         // Fill the background
         guiGraphics.fill(x, y, x + width, y + height, FIELD_BG_COLOR);
         
+        // Draw border with focus state
+        int borderColor = isFocused ? FIELD_BORDER_FOCUS : FIELD_BORDER;
+        
         // Draw border
-        guiGraphics.fill(x, y, x + width, y + 1, FIELD_BORDER);
-        guiGraphics.fill(x, y + 1, x + 1, y + height, FIELD_BORDER);
-        guiGraphics.fill(x + 1, y + height - 1, x + width, y + height, FIELD_BORDER);
-        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, FIELD_BORDER);
+        guiGraphics.fill(x, y, x + width, y + 1, borderColor);
+        guiGraphics.fill(x, y + 1, x + 1, y + height, borderColor);
+        guiGraphics.fill(x + 1, y + height - 1, x + width, y + height, borderColor);
+        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, borderColor);
     }
     
     @Override
@@ -284,55 +286,56 @@ public class ItemEditorScreen extends Screen {
         drawRoundedRect(guiGraphics, this.guiLeft - 5, this.guiTop - 5, GUI_WIDTH + 10, GUI_HEIGHT + 10, 10, PANEL_COLOR);
         
         // Draw header bar
-        guiGraphics.fill(this.guiLeft - 5, this.guiTop - 5, this.guiLeft + GUI_WIDTH + 5, this.guiTop + 30, HEADER_COLOR);
+        guiGraphics.fill(this.guiLeft - 5, this.guiTop - 5, this.guiLeft + GUI_WIDTH + 5, this.guiTop + HEADER_HEIGHT, HEADER_COLOR);
         
-        // Draw title
-        guiGraphics.drawCenteredString(this.font, "Item Editor", this.width / 2, this.guiTop + 10, TITLE_COLOR);
+        // Draw title - properly centered
+        Component titleComponent = Component.translatable("itemtooltipenhancer.gui.editor.title");
+        int titleWidth = this.font.width(titleComponent);
+        guiGraphics.drawString(this.font, titleComponent, this.width / 2 - titleWidth / 2, this.guiTop + 10, TITLE_COLOR);
         
-        // Draw item ID
+        // Draw item ID - centered
         String idText = this.itemId != null ? this.itemId.toString() : "unknown";
-        guiGraphics.drawCenteredString(this.font, idText, this.width / 2, this.guiTop + 20, SECONDARY_TEXT);
+        guiGraphics.drawCenteredString(this.font, idText, this.width / 2, this.guiTop + 22, SECONDARY_TEXT);
         
-        // Draw sections dividers
-        guiGraphics.fill(this.guiLeft + 10, this.guiTop + 70, this.guiLeft + GUI_WIDTH - 10, this.guiTop + 71, DIVIDER_COLOR);
-        guiGraphics.fill(this.guiLeft + 10, this.guiTop + 160, this.guiLeft + GUI_WIDTH - 10, this.guiTop + 161, DIVIDER_COLOR);
+        // Draw section dividers
+        int dividerY1 = this.guiTop + HEADER_HEIGHT + 40;
+        int dividerY2 = this.guiTop + GUI_HEIGHT - 50;
         
-        // Draw section labels
+        guiGraphics.fill(this.guiLeft + 10, dividerY1, this.guiLeft + GUI_WIDTH - 10, dividerY1 + 1, DIVIDER_COLOR);
+        guiGraphics.fill(this.guiLeft + 10, dividerY2, this.guiLeft + GUI_WIDTH - 10, dividerY2 + 1, DIVIDER_COLOR);
+        
+        // Draw section labels with consistent alignment
+        int labelX = this.guiLeft + 10;
+        
         guiGraphics.drawString(this.font, Component.translatable("itemtooltipenhancer.gui.editor.displayName"), 
-                this.guiLeft + 10, this.guiTop + 45, PRIMARY_TEXT);
+                labelX, this.displayNameBox.getY() + 5, PRIMARY_TEXT);
         
         guiGraphics.drawString(this.font, Component.translatable("itemtooltipenhancer.gui.editor.tooltip"), 
-                this.guiLeft + 10, this.guiTop + 85, PRIMARY_TEXT);
+                labelX, this.tooltipLineBoxes.get(0).getY() - 15, PRIMARY_TEXT);
         
         guiGraphics.drawString(this.font, Component.translatable("itemtooltipenhancer.gui.editor.rarity"), 
-                this.guiLeft + 10, this.guiTop + 180, PRIMARY_TEXT);
+                labelX, this.rarityButton.getY() + 5, PRIMARY_TEXT);
         
-        // Draw field backgrounds
-        int labelWidth = 70;
-        int fieldX = this.guiLeft + labelWidth + 10;
-        int fieldWidth = GUI_WIDTH - labelWidth - 30;
+        // Draw field backgrounds with focus state
+        for (int i = 0; i < this.tooltipLineBoxes.size(); i++) {
+            EditBox box = this.tooltipLineBoxes.get(i);
+            drawFieldBackground(guiGraphics, box.getX() - 1, box.getY() - 1, 
+                    box.getWidth() + 2, box.getHeight() + 2, box.isFocused());
+        }
         
         // Display name field background
-        drawFieldBackground(guiGraphics, fieldX - 1, this.guiTop + 39, fieldWidth + 2, 22);
-        
-        // Tooltip field backgrounds
-        int tooltipStartY = this.guiTop + 85;
-        int tooltipLineHeight = 24;
-        
-        for (int i = 0; i < this.tooltipLineBoxes.size(); i++) {
-            drawFieldBackground(guiGraphics, fieldX - 1, tooltipStartY + (i * tooltipLineHeight) - 1, 
-                    fieldWidth - 23, 22);
-        }
+        drawFieldBackground(guiGraphics, this.displayNameBox.getX() - 1, this.displayNameBox.getY() - 1, 
+                this.displayNameBox.getWidth() + 2, this.displayNameBox.getHeight() + 2, this.displayNameBox.isFocused());
         
         // Draw item preview
         ItemStack stack = new ItemStack(this.item);
         int itemX = this.guiLeft + 40;
-        int itemY = this.guiTop + 115;
+        int itemY = this.guiTop + 135;
         
         // Draw item slot - rounded square
         drawRoundedRect(guiGraphics, itemX - 10, itemY - 10, 32, 32, 4, SLOT_BG_COLOR);
         
-        // Item slot highlight/border
+        // Item slot border
         int borderSize = 1;
         guiGraphics.fill(itemX - 10, itemY - 10 + 4, itemX - 10 + borderSize, itemY - 10 + 32 - 4, SLOT_BORDER);  // Left
         guiGraphics.fill(itemX - 10 + 32 - borderSize, itemY - 10 + 4, itemX - 10 + 32, itemY - 10 + 32 - 4, SLOT_BORDER);  // Right
@@ -350,10 +353,45 @@ public class ItemEditorScreen extends Screen {
                     itemX - this.font.width(customText) / 2, itemY + 20, TITLE_COLOR);
         }
         
+        // Render button hover states
+        renderButtonHoverStates(guiGraphics, mouseX, mouseY);
+        
         // Render all UI components
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         // Button tooltips
+        renderButtonTooltips(guiGraphics, mouseX, mouseY);
+    }
+    
+    private void renderButtonHoverStates(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Add hover effects for buttons
+        renderButtonHoverEffect(guiGraphics, this.saveButton, mouseX, mouseY);
+        renderButtonHoverEffect(guiGraphics, this.cancelButton, mouseX, mouseY);
+        renderButtonHoverEffect(guiGraphics, this.deleteButton, mouseX, mouseY);
+        renderButtonHoverEffect(guiGraphics, this.addTooltipLineButton, mouseX, mouseY);
+        renderButtonHoverEffect(guiGraphics, this.removeTooltipLineButton, mouseX, mouseY);
+    }
+    
+    private void renderButtonHoverEffect(GuiGraphics guiGraphics, Button button, int mouseX, int mouseY) {
+        if (button.isHoveredOrFocused() && button.active) {
+            // Draw a hovering effect for the button
+            int x = button.getX();
+            int y = button.getY();
+            int width = button.getWidth();
+            int height = button.getHeight();
+            
+            // Brighten the button background when hovered
+            guiGraphics.fill(x, y, x + width, y + height, BUTTON_HOVER);
+            
+            // Keep the button text visible
+            Component message = button.getMessage();
+            int textX = x + (width / 2) - (this.font.width(message) / 2);
+            int textY = y + (height - 8) / 2;
+            guiGraphics.drawString(this.font, message, textX, textY, 0xFFFFFFFF);
+        }
+    }
+    
+    private void renderButtonTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (this.deleteButton.isHoveredOrFocused()) {
             Component tooltip = Component.translatable(this.isModItem ? 
                 "itemtooltipenhancer.gui.editor.delete.tooltip" : 
@@ -376,6 +414,14 @@ public class ItemEditorScreen extends Screen {
             }
             guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
         }
+    }
+    
+    private void playSoundFeedback() {
+        Minecraft.getInstance().getSoundManager().play(
+            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
+            )
+        );
     }
     
     @Override

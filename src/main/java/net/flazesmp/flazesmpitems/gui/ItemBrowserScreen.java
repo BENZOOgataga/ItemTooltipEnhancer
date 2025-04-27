@@ -21,10 +21,20 @@ import java.util.stream.Collectors;
 public class ItemBrowserScreen extends Screen {
     // Constants for GUI dimensions
     private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 130;
+    private static final int GUI_HEIGHT = 140; // Slightly increased for better spacing
     private static final int GRID_WIDTH = 9;
     private static final int GRID_HEIGHT = 5;
     private static final int SLOT_SIZE = 18;
+    private static final int SLOT_PADDING = 2; // Added padding between slots
+    private static final int TOTAL_SLOT_SIZE = SLOT_SIZE + SLOT_PADDING;
+    
+    // Constants for positioning
+    private static final int HEADER_HEIGHT = 30;
+    private static final int TITLE_OFFSET_Y = 12; // Adjusted to center in header
+    private static final int SEARCH_OFFSET_Y = 5; // Shifted down from title
+    private static final int NAV_BUTTON_SPACING = 50; // Space between nav buttons
+    private static final int NAV_BUTTON_Y_MARGIN = 15; // Margin below grid
+    private static final int TOOLTIP_Y_OFFSET = 5; // Shift tooltips down
     
     // Colors
     private static final int BACKGROUND_COLOR = 0xB0000000;  // Semi-transparent black
@@ -35,6 +45,7 @@ public class ItemBrowserScreen extends Screen {
     private static final int SLOT_BG_COLOR = 0xFF202020;     // Darker slot background
     private static final int SLOT_BORDER = 0xFF505050;       // Slot border
     private static final int SLOT_HIGHLIGHT = 0x80FFFFFF;    // White highlight
+    private static final int HOVER_HIGHLIGHT = 0xFF606060;   // Button hover highlight
     private static final int ACCENT_COLOR = 0xFFFFAA00;      // Orange accent
     private static final int CUSTOM_ITEM_HIGHLIGHT = 0x3500FF00; // Green tint for custom items
     
@@ -61,8 +72,13 @@ public class ItemBrowserScreen extends Screen {
         this.guiLeft = (this.width - GUI_WIDTH) / 2;
         this.guiTop = (this.height - GUI_HEIGHT) / 2;
         
-        // Create the search box
-        this.searchBox = new EditBox(this.font, this.guiLeft + 82, this.guiTop - 16, 80, 14,
+        // Calculate positioning for consistent spacing
+        int gridTotalHeight = GRID_HEIGHT * TOTAL_SLOT_SIZE;
+        int searchY = this.guiTop - HEADER_HEIGHT + TITLE_OFFSET_Y + SEARCH_OFFSET_Y;
+        
+        // Create the search box - centered horizontally
+        int searchBoxWidth = 100;
+        this.searchBox = new EditBox(this.font, this.width / 2 - searchBoxWidth / 2, searchY, searchBoxWidth, 16,
                 Component.translatable("itemtooltipenhancer.gui.search"));
         this.searchBox.setMaxLength(50);
         this.searchBox.setBordered(false);
@@ -72,32 +88,30 @@ public class ItemBrowserScreen extends Screen {
         this.searchBox.setResponder(this::updateFilteredItems);
         this.addRenderableWidget(this.searchBox);
 
-        // Navigation buttons with better spacing
+        // Navigation buttons with centered positioning
+        int navButtonY = this.guiTop + gridTotalHeight + NAV_BUTTON_Y_MARGIN;
+        int navButtonSize = 20; // Standard button size
+        
+        // Center the navigation controls below the grid
         this.prevPageButton = Button.builder(Component.literal("<"), button -> {
             if (this.currentPage > 0) {
                 this.currentPage--;
-                Minecraft.getInstance().getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                    )
-                );
+                playSoundFeedback();
                 updateButtonStates();
             }
-        }).bounds(this.guiLeft - 25, this.guiTop + 55, 20, 20).build();
+        }).bounds(this.width / 2 - NAV_BUTTON_SPACING, navButtonY, navButtonSize, navButtonSize).build();
         
         this.nextPageButton = Button.builder(Component.literal(">"), button -> {
             if (this.currentPage < this.maxPage - 1) {
                 this.currentPage++;
-                Minecraft.getInstance().getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                    )
-                );
+                playSoundFeedback();
                 updateButtonStates();
             }
-        }).bounds(this.guiLeft + GUI_WIDTH + 5, this.guiTop + 55, 20, 20).build();
+        }).bounds(this.width / 2 + NAV_BUTTON_SPACING - navButtonSize, navButtonY, navButtonSize, navButtonSize).build();
         
-        // Toggle button for showing all/custom items
+        // Toggle button for showing all/custom items - full width and positioned below navigation
+        int toggleBtnWidth = 150;
+        int toggleBtnHeight = 20;
         this.customItemsButton = Button.builder(
             Component.translatable(showingCustomItemsOnly 
                 ? "itemtooltipenhancer.gui.showAll" 
@@ -109,13 +123,9 @@ public class ItemBrowserScreen extends Screen {
                     : "itemtooltipenhancer.gui.showCustomOnly"));
                 updateFilteredItems(this.searchBox.getValue());
                 
-                Minecraft.getInstance().getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
-                    )
-                );
+                playSoundFeedback();
             }
-        ).bounds(this.guiLeft + (GUI_WIDTH/2) - 70, this.guiTop + GUI_HEIGHT + 20, 140, 20).build();
+        ).bounds(this.width / 2 - toggleBtnWidth / 2, navButtonY + navButtonSize + 5, toggleBtnWidth, toggleBtnHeight).build();
         
         // Add all widgets
         this.addRenderableWidget(this.prevPageButton);
@@ -182,9 +192,12 @@ public class ItemBrowserScreen extends Screen {
     }
     
     // Draw a single item slot with rounded corners
-    private void drawSlot(GuiGraphics guiGraphics, int x, int y) {
+    private void drawSlot(GuiGraphics guiGraphics, int x, int y, boolean isHovered) {
+        // Slot background color changes when hovered
+        int bgColor = isHovered ? HOVER_HIGHLIGHT : SLOT_BG_COLOR;
+        
         // Draw slot background
-        guiGraphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, SLOT_BG_COLOR);
+        guiGraphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, bgColor);
         
         // Draw slot border
         guiGraphics.fill(x, y, x + SLOT_SIZE, y + 1, SLOT_BORDER);           // Top
@@ -222,36 +235,66 @@ public class ItemBrowserScreen extends Screen {
         guiGraphics.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
         
         // Draw main panel with rounded corners
-        drawRoundedRect(guiGraphics, this.guiLeft - 5, this.guiTop - 25, GUI_WIDTH + 10, GUI_HEIGHT + 55, 8, PANEL_COLOR);
+        int panelHeight = GUI_HEIGHT + 60; // Added more space for buttons
+        drawRoundedRect(guiGraphics, this.guiLeft - 10, this.guiTop - HEADER_HEIGHT, GUI_WIDTH + 20, panelHeight, 8, PANEL_COLOR);
         
-        // Draw a header bar
-        guiGraphics.fill(this.guiLeft - 5, this.guiTop - 25, this.guiLeft + GUI_WIDTH + 5, this.guiTop - 5, HEADER_COLOR);
+        // Draw header bar
+        guiGraphics.fill(this.guiLeft - 10, this.guiTop - HEADER_HEIGHT, this.guiLeft + GUI_WIDTH + 10, this.guiTop, HEADER_COLOR);
         
-        // Draw title
-        guiGraphics.drawString(this.font, this.title, this.guiLeft, this.guiTop - 20, ACCENT_COLOR);
+        // Draw title - centered and properly positioned in header
+        Component titleComponent = this.title;
+        int titleWidth = this.font.width(titleComponent);
+        guiGraphics.drawString(this.font, titleComponent, 
+                this.width / 2 - titleWidth / 2, 
+                this.guiTop - HEADER_HEIGHT + TITLE_OFFSET_Y, 
+                ACCENT_COLOR);
         
-        // Draw search label
-        guiGraphics.drawString(this.font, Component.translatable("itemGroup.search"), 
-                this.guiLeft + 50, this.guiTop - 15, PRIMARY_TEXT);
+        // Draw search label - centered
+        Component searchLabel = Component.translatable("itemGroup.search");
+        int labelWidth = this.font.width(searchLabel);
+        int labelX = this.width / 2 - this.searchBox.getWidth() / 2 - labelWidth - 5;
+        guiGraphics.drawString(this.font, searchLabel, labelX, 
+                this.searchBox.getY() + 2, PRIMARY_TEXT);
         
         // Draw search box background
-        guiGraphics.fill(this.guiLeft + 82, this.guiTop - 16, this.guiLeft + 162, this.guiTop - 2, 0xFF101010);
-        guiGraphics.fill(this.guiLeft + 82, this.guiTop - 15, this.guiLeft + 162, this.guiTop - 3, 0xFF303030);
+        int searchBoxX = this.searchBox.getX() - 1;
+        int searchBoxY = this.searchBox.getY() - 1;
+        int searchBoxWidth = this.searchBox.getWidth() + 2;
+        int searchBoxHeight = this.searchBox.getHeight() + 2;
+        guiGraphics.fill(searchBoxX, searchBoxY, searchBoxX + searchBoxWidth, searchBoxY + searchBoxHeight, 0xFF101010);
         
         // Draw page counter with proper spacing
         String pageInfo = String.format("%d/%d", this.currentPage + 1, this.maxPage);
-        guiGraphics.drawCenteredString(this.font, pageInfo, this.width / 2, this.guiTop + GUI_HEIGHT + 5, PRIMARY_TEXT);
+        guiGraphics.drawCenteredString(this.font, pageInfo, this.width / 2, this.prevPageButton.getY() + 5, PRIMARY_TEXT);
         
-        // Draw grid background panel
-        guiGraphics.fill(this.guiLeft, this.guiTop, this.guiLeft + GUI_WIDTH, this.guiTop + GUI_HEIGHT, 0xFF202020);
+        // Draw grid background panel - with spacing adjustments
+        int gridWidth = GRID_WIDTH * TOTAL_SLOT_SIZE - SLOT_PADDING;
+        int gridHeight = GRID_HEIGHT * TOTAL_SLOT_SIZE - SLOT_PADDING;
+        guiGraphics.fill(this.guiLeft, this.guiTop, this.guiLeft + gridWidth, this.guiTop + gridHeight, 0xFF202020);
         
-        // Draw grid slots
-        int firstSlotX = this.guiLeft + 8;  
-        int firstSlotY = this.guiTop + 8; 
+        // Calculate grid starting positions to center the grid
+        int firstSlotX = this.guiLeft;  
+        int firstSlotY = this.guiTop; 
         
+        // Track which slot is hovered
+        int hoveredSlotX = -1;
+        int hoveredSlotY = -1;
+        
+        // Check which slot is hovered
+        if (mouseX >= firstSlotX && mouseX < firstSlotX + gridWidth &&
+            mouseY >= firstSlotY && mouseY < firstSlotY + gridHeight) {
+            
+            hoveredSlotX = (mouseX - firstSlotX) / TOTAL_SLOT_SIZE;
+            hoveredSlotY = (mouseY - firstSlotY) / TOTAL_SLOT_SIZE;
+        }
+        
+        // Draw grid slots with padding
         for (int row = 0; row < GRID_HEIGHT; row++) {
             for (int col = 0; col < GRID_WIDTH; col++) {
-                drawSlot(guiGraphics, firstSlotX + col * SLOT_SIZE, firstSlotY + row * SLOT_SIZE);
+                int x = firstSlotX + col * TOTAL_SLOT_SIZE;
+                int y = firstSlotY + row * TOTAL_SLOT_SIZE;
+                boolean isHovered = (col == hoveredSlotX && row == hoveredSlotY);
+                drawSlot(guiGraphics, x, y, isHovered);
             }
         }
         
@@ -265,9 +308,9 @@ public class ItemBrowserScreen extends Screen {
             int row = index / GRID_WIDTH;
             int col = index % GRID_WIDTH;
             
-            // Position each item in its proper grid cell
-            int x = firstSlotX + col * SLOT_SIZE + 1;
-            int y = firstSlotY + row * SLOT_SIZE + 1;
+            // Position each item in its proper grid cell with padding
+            int x = firstSlotX + col * TOTAL_SLOT_SIZE + 1;
+            int y = firstSlotY + row * TOTAL_SLOT_SIZE + 1;
             
             // Draw the item
             Item item = filteredItems.get(i);
@@ -281,38 +324,62 @@ public class ItemBrowserScreen extends Screen {
             }
         }
         
-        // Draw tooltips for items when hovered
-        if (mouseX >= firstSlotX && mouseX < firstSlotX + (GRID_WIDTH * SLOT_SIZE) &&
-            mouseY >= firstSlotY && mouseY < firstSlotY + (GRID_HEIGHT * SLOT_SIZE)) {
+        // Draw tooltips for items when hovered - with adjusted Y position
+        if (hoveredSlotX >= 0 && hoveredSlotY >= 0 && hoveredSlotX < GRID_WIDTH && hoveredSlotY < GRID_HEIGHT) {
+            int index = startIndex + hoveredSlotY * GRID_WIDTH + hoveredSlotX;
             
-            int col = (mouseX - firstSlotX) / SLOT_SIZE;
-            int row = (mouseY - firstSlotY) / SLOT_SIZE;
-            
-            if (col >= 0 && col < GRID_WIDTH && row >= 0 && row < GRID_HEIGHT) {
-                int index = startIndex + row * GRID_WIDTH + col;
+            if (index < filteredItems.size()) {
+                // Highlight the hovered slot
+                int slotX = firstSlotX + hoveredSlotX * TOTAL_SLOT_SIZE;
+                int slotY = firstSlotY + hoveredSlotY * TOTAL_SLOT_SIZE;
+                guiGraphics.fill(slotX + 1, slotY + 1, slotX + SLOT_SIZE - 1, slotY + SLOT_SIZE - 1, SLOT_HIGHLIGHT);
                 
-                if (index < filteredItems.size()) {
-                    Item item = filteredItems.get(index);
-                    ItemStack stack = new ItemStack(item);
-                    
-                    // Highlight the hovered item
-                    int slotX = firstSlotX + col * SLOT_SIZE;
-                    int slotY = firstSlotY + row * SLOT_SIZE;
-                    guiGraphics.fill(slotX + 1, slotY + 1, slotX + SLOT_SIZE - 1, slotY + SLOT_SIZE - 1, SLOT_HIGHLIGHT);
-                    
-                    // Draw tooltip
-                    guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
-                }
+                // Draw item tooltip with Y offset
+                Item item = filteredItems.get(index);
+                ItemStack stack = new ItemStack(item);
+                guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY + TOOLTIP_Y_OFFSET);
             }
         }
         
         // Draw count information
         String countInfo = String.format("%d items", filteredItems.size());
-        guiGraphics.drawString(this.font, countInfo, this.guiLeft + GUI_WIDTH - this.font.width(countInfo) - 8, 
+        guiGraphics.drawString(this.font, countInfo, this.guiLeft + gridWidth - this.font.width(countInfo) - 8, 
                 this.guiTop - 20, SECONDARY_TEXT);
+        
+        // Render hover states for buttons
+        renderButtonHoverStates(guiGraphics, mouseX, mouseY);
         
         // Render all UI components (buttons, search box, etc.)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderButtonHoverStates(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Add hover effects for buttons
+        if (this.prevPageButton.isHoveredOrFocused() && this.prevPageButton.active) {
+            drawButtonHoverEffect(guiGraphics, this.prevPageButton);
+        }
+        
+        if (this.nextPageButton.isHoveredOrFocused() && this.nextPageButton.active) {
+            drawButtonHoverEffect(guiGraphics, this.nextPageButton);
+        }
+        
+        if (this.customItemsButton.isHoveredOrFocused()) {
+            drawButtonHoverEffect(guiGraphics, this.customItemsButton);
+        }
+    }
+    
+    private void drawButtonHoverEffect(GuiGraphics guiGraphics, Button button) {
+        // Draw a subtle highlight border around the button when hovered
+        int x = button.getX();
+        int y = button.getY();
+        int width = button.getWidth();
+        int height = button.getHeight();
+        
+        // Draw border highlight
+        guiGraphics.fill(x - 1, y - 1, x + width + 1, y, ACCENT_COLOR); // Top
+        guiGraphics.fill(x - 1, y + height, x + width + 1, y + height + 1, ACCENT_COLOR); // Bottom
+        guiGraphics.fill(x - 1, y, x, y + height, ACCENT_COLOR); // Left
+        guiGraphics.fill(x + width, y, x + width + 1, y + height, ACCENT_COLOR); // Right
     }
 
     @Override
@@ -321,15 +388,17 @@ public class ItemBrowserScreen extends Screen {
             return true;
         }
         
-        // Handle item grid clicks
-        int firstSlotX = this.guiLeft + 8;
-        int firstSlotY = this.guiTop + 8;
+        // Handle item grid clicks with improved spacing
+        int gridWidth = GRID_WIDTH * TOTAL_SLOT_SIZE - SLOT_PADDING;
+        int gridHeight = GRID_HEIGHT * TOTAL_SLOT_SIZE - SLOT_PADDING;
+        int firstSlotX = this.guiLeft;
+        int firstSlotY = this.guiTop;
         
-        if (mouseX >= firstSlotX && mouseX < firstSlotX + (GRID_WIDTH * SLOT_SIZE) &&
-            mouseY >= firstSlotY && mouseY < firstSlotY + (GRID_HEIGHT * SLOT_SIZE)) {
+        if (mouseX >= firstSlotX && mouseX < firstSlotX + gridWidth &&
+            mouseY >= firstSlotY && mouseY < firstSlotY + gridHeight) {
             
-            int col = (int)((mouseX - firstSlotX) / SLOT_SIZE);
-            int row = (int)((mouseY - firstSlotY) / SLOT_SIZE);
+            int col = (int)((mouseX - firstSlotX) / TOTAL_SLOT_SIZE);
+            int row = (int)((mouseY - firstSlotY) / TOTAL_SLOT_SIZE);
             
             if (col >= 0 && col < GRID_WIDTH && row >= 0 && row < GRID_HEIGHT) {
                 int itemsPerPage = GRID_WIDTH * GRID_HEIGHT;
@@ -340,11 +409,7 @@ public class ItemBrowserScreen extends Screen {
                     Item item = filteredItems.get(index);
                     
                     // Play item select sound
-                    Minecraft.getInstance().getSoundManager().play(
-                        net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 0.8F
-                        )
-                    );
+                    playSoundFeedback(0.8F);
                         
                     // Open item editor screen
                     Minecraft.getInstance().setScreen(new ItemEditorScreen(item, this));
@@ -354,6 +419,18 @@ public class ItemBrowserScreen extends Screen {
         }
         
         return false;
+    }
+    
+    private void playSoundFeedback() {
+        playSoundFeedback(1.0F);
+    }
+    
+    private void playSoundFeedback(float pitch) {
+        Minecraft.getInstance().getSoundManager().play(
+            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, pitch
+            )
+        );
     }
     
     @Override
