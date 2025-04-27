@@ -20,7 +20,9 @@ import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
@@ -636,10 +638,18 @@ public class RarityManager {
         }
         
         // Potion category
-        if (item == Items.POTION || 
+        if (item instanceof PotionItem || 
+            item == Items.POTION || 
             item == Items.SPLASH_POTION || 
-            item == Items.LINGERING_POTION) {
+            item == Items.LINGERING_POTION || 
+            item == Items.TIPPED_ARROW) {
             return "Potion";
+        }
+        
+        // Music category
+        if (item instanceof RecordItem || 
+            item.getDescriptionId().contains("music_disc")) {
+            return "Music";
         }
         
         // Blocks category - check if it's a block item
@@ -769,9 +779,12 @@ public class RarityManager {
         if (item.isEdible()) {
             if (item == Items.GOLDEN_APPLE || item == Items.ENCHANTED_GOLDEN_APPLE) {
                 return "APPLE";
-            } else if (item == Items.POTION || item == Items.SPLASH_POTION || 
-                       item == Items.LINGERING_POTION) {
-                return "POTION";
+            } else if (item instanceof PotionItem || 
+                       item == Items.POTION || 
+                       item == Items.SPLASH_POTION || 
+                       item == Items.LINGERING_POTION || 
+                       item == Items.TIPPED_ARROW) {
+                return "Potion";
             } else {
                 return "FOOD";
             }
@@ -780,8 +793,6 @@ public class RarityManager {
         // Special items
         if (item == Items.TOTEM_OF_UNDYING) {
             return "ARTIFACT";
-        } else if (item.getDescriptionId().contains("music_disc")) {
-            return "MUSIC DISC";
         } else if (item instanceof BlockItem) {
             Block block = ((BlockItem)item).getBlock();
             // Check for special blocks

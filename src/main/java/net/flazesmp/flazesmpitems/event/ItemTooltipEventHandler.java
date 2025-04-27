@@ -1,5 +1,6 @@
 package net.flazesmp.flazesmpitems.event;
 
+import net.flazesmp.flazesmpitems.tooltip.SpecialItemTooltipHandler;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
@@ -85,6 +86,36 @@ public class ItemTooltipEventHandler {
             
             // Add a blank line after custom tooltips section
             tooltip.add(Component.literal(""));
+        }
+        
+        // Handle special items like potions and music discs
+        if (SpecialItemTooltipHandler.handleSpecialItem(tooltip, stack)) {
+            // If it was a special item, still apply rarity and category at the bottom
+            ItemRarity rarity = RarityManager.getRarity(item);
+            String category = RarityManager.getItemCategory(item);
+            String itemTypeSuffix = RarityManager.getItemTypeSuffix(item);
+            
+            // Create rarity component with suffix if available
+            Component rarityLine;
+            if (itemTypeSuffix != null && !itemTypeSuffix.isEmpty()) {
+                rarityLine = Component.literal(rarity.getName().toUpperCase() + " " + itemTypeSuffix)
+                    .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
+            } else {
+                rarityLine = Component.literal(rarity.getName().toUpperCase())
+                    .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
+            }
+            
+            // If category exists, show it above rarity at the bottom
+            if (category != null && !category.isEmpty()) {
+                Component categoryLine = Component.literal(category)
+                    .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
+                tooltip.add(categoryLine);
+            }
+            
+            // Add rarity as the last element
+            tooltip.add(rarityLine);
+            
+            return; // Skip regular tooltip processing
         }
         
         // Get rarity from RarityManager
