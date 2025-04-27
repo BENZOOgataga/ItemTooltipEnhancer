@@ -1,4 +1,4 @@
-package net.surya.tutorialmod;
+package net.flazesmp.tutorialmod;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
