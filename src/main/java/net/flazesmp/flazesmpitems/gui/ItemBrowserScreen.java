@@ -1,14 +1,11 @@
 package net.flazesmp.flazesmpitems.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.flazesmp.flazesmpitems.config.CustomItemsConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -23,18 +20,24 @@ import java.util.stream.Collectors;
 
 public class ItemBrowserScreen extends Screen {
     // Constants for GUI dimensions
-    private static final int GUI_WIDTH = 176; // Standard inventory width
-    private static final int GUI_HEIGHT = 130; // Height for just the items section
+    private static final int GUI_WIDTH = 176;
+    private static final int GUI_HEIGHT = 130;
     private static final int GRID_WIDTH = 9;
     private static final int GRID_HEIGHT = 5;
-    private static final int SLOT_SIZE = 18; // Size of each item slot
+    private static final int SLOT_SIZE = 18;
     
     // Colors
-    private static final int BACKGROUND_COLOR = 0xFFC6C6C6; // Light gray
-    private static final int BORDER_DARK = 0xFF555555;
-    private static final int BORDER_LIGHT = 0xFFFFFFFF;
-    private static final int SLOT_COLOR = 0xFF8B8B8B;
-
+    private static final int BACKGROUND_COLOR = 0xB0000000;  // Semi-transparent black
+    private static final int PANEL_COLOR = 0xE0303030;       // Dark gray panel
+    private static final int HEADER_COLOR = 0xFF404040;      // Header color
+    private static final int PRIMARY_TEXT = 0xFFEEEEEE;      // White text
+    private static final int SECONDARY_TEXT = 0xFFAAAAAA;    // Light gray text
+    private static final int SLOT_BG_COLOR = 0xFF202020;     // Darker slot background
+    private static final int SLOT_BORDER = 0xFF505050;       // Slot border
+    private static final int SLOT_HIGHLIGHT = 0x80FFFFFF;    // White highlight
+    private static final int ACCENT_COLOR = 0xFFFFAA00;      // Orange accent
+    private static final int CUSTOM_ITEM_HIGHLIGHT = 0x3500FF00; // Green tint for custom items
+    
     // Position values
     private int guiLeft;
     private int guiTop;
@@ -58,18 +61,18 @@ public class ItemBrowserScreen extends Screen {
         this.guiLeft = (this.width - GUI_WIDTH) / 2;
         this.guiTop = (this.height - GUI_HEIGHT) / 2;
         
-        // Search box - positioned with proper spacing
-        this.searchBox = new EditBox(this.font, this.guiLeft + 82, this.guiTop - 15, 80, 12,
+        // Create the search box
+        this.searchBox = new EditBox(this.font, this.guiLeft + 82, this.guiTop - 16, 80, 14,
                 Component.translatable("itemtooltipenhancer.gui.search"));
         this.searchBox.setMaxLength(50);
-        this.searchBox.setBordered(true);
+        this.searchBox.setBordered(false);
         this.searchBox.setVisible(true);
-        this.searchBox.setTextColor(0x000000);
+        this.searchBox.setTextColor(PRIMARY_TEXT);
         this.searchBox.setValue("");
         this.searchBox.setResponder(this::updateFilteredItems);
         this.addRenderableWidget(this.searchBox);
 
-        // Navigation buttons - positioned with proper spacing on either side
+        // Navigation buttons with better spacing
         this.prevPageButton = Button.builder(Component.literal("<"), button -> {
             if (this.currentPage > 0) {
                 this.currentPage--;
@@ -80,7 +83,7 @@ public class ItemBrowserScreen extends Screen {
                 );
                 updateButtonStates();
             }
-        }).bounds(this.guiLeft - 30, this.guiTop + 60, 20, 20).build();
+        }).bounds(this.guiLeft - 25, this.guiTop + 55, 20, 20).build();
         
         this.nextPageButton = Button.builder(Component.literal(">"), button -> {
             if (this.currentPage < this.maxPage - 1) {
@@ -92,9 +95,9 @@ public class ItemBrowserScreen extends Screen {
                 );
                 updateButtonStates();
             }
-        }).bounds(this.guiLeft + GUI_WIDTH + 10, this.guiTop + 60, 20, 20).build();
+        }).bounds(this.guiLeft + GUI_WIDTH + 5, this.guiTop + 55, 20, 20).build();
         
-        // Show all/custom items button - positioned with proper spacing at the bottom
+        // Toggle button for showing all/custom items
         this.customItemsButton = Button.builder(
             Component.translatable(showingCustomItemsOnly 
                 ? "itemtooltipenhancer.gui.showAll" 
@@ -112,7 +115,7 @@ public class ItemBrowserScreen extends Screen {
                     )
                 );
             }
-        ).bounds(this.guiLeft + (GUI_WIDTH/2) - 70, this.guiTop + GUI_HEIGHT + 15, 140, 20).build();
+        ).bounds(this.guiLeft + (GUI_WIDTH/2) - 70, this.guiTop + GUI_HEIGHT + 20, 140, 20).build();
         
         // Add all widgets
         this.addRenderableWidget(this.prevPageButton);
@@ -126,7 +129,7 @@ public class ItemBrowserScreen extends Screen {
     private void updateFilteredItems(String filter) {
         filteredItems.clear();
         
-        // Collect all items or only custom items based on the toggle
+        // Collect items based on selected filter mode
         if (showingCustomItemsOnly) {
             for (ResourceLocation itemId : CustomItemsConfig.getAllCustomItems().keySet()) {
                 Item item = ForgeRegistries.ITEMS.getValue(itemId);
@@ -178,53 +181,79 @@ public class ItemBrowserScreen extends Screen {
         this.nextPageButton.active = this.currentPage < this.maxPage - 1;
     }
     
-    /**
-     * Draws a Minecraft-style "slot" at the specified coordinates
-     */
-    private void drawItemSlot(GuiGraphics guiGraphics, int x, int y) {
-        // Draw darker background
-        guiGraphics.fill(x, y, x + 18, y + 18, SLOT_COLOR);
+    // Draw a single item slot with rounded corners
+    private void drawSlot(GuiGraphics guiGraphics, int x, int y) {
+        // Draw slot background
+        guiGraphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, SLOT_BG_COLOR);
         
         // Draw slot border
-        guiGraphics.fill(x, y, x + 1, y + 18, BORDER_DARK);  // Left edge
-        guiGraphics.fill(x + 1, y, x + 18, y + 1, BORDER_DARK);  // Top edge
-        guiGraphics.fill(x + 17, y + 1, x + 18, y + 18, BORDER_LIGHT);  // Right edge
-        guiGraphics.fill(x + 1, y + 17, x + 17, y + 18, BORDER_LIGHT);  // Bottom edge
+        guiGraphics.fill(x, y, x + SLOT_SIZE, y + 1, SLOT_BORDER);           // Top
+        guiGraphics.fill(x, y + 1, x + 1, y + SLOT_SIZE - 1, SLOT_BORDER);   // Left
+        guiGraphics.fill(x + 1, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, SLOT_BORDER); // Bottom
+        guiGraphics.fill(x + SLOT_SIZE - 1, y + 1, x + SLOT_SIZE, y + SLOT_SIZE - 1, SLOT_BORDER); // Right
+    }
+
+    // Draw a rounded rectangle
+    private void drawRoundedRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int radius, int color) {
+        // Draw main rectangle (excluding corners)
+        guiGraphics.fill(x + radius, y, x + width - radius, y + height, color); // Top and bottom horizontal rectangles
+        guiGraphics.fill(x, y + radius, x + width, y + height - radius, color); // Left and right vertical rectangles
+        
+        // Draw corners
+        for (int i = 0; i < radius; i++) {
+            int cornerWidth = radius - i;
+            // Top-left corner
+            guiGraphics.fill(x + i, y + radius - cornerWidth, x + i + 1, y + radius, color);
+            // Top-right corner
+            guiGraphics.fill(x + width - i - 1, y + radius - cornerWidth, x + width - i, y + radius, color);
+            // Bottom-left corner
+            guiGraphics.fill(x + i, y + height - radius, x + i + 1, y + height - radius + cornerWidth, color);
+            // Bottom-right corner
+            guiGraphics.fill(x + width - i - 1, y + height - radius, x + width - i, y + height - radius + cornerWidth, color);
+        }
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // Render background texture
+        // Render darkened background
         this.renderBackground(guiGraphics);
         
-        // Draw the custom GUI background - recreating just the items grid part
-        // Outer dark border
-        guiGraphics.fill(this.guiLeft - 1, this.guiTop - 1, this.guiLeft + GUI_WIDTH + 1, this.guiTop + GUI_HEIGHT + 1, BORDER_DARK);
+        // Draw a semi-transparent full screen overlay
+        guiGraphics.fill(0, 0, this.width, this.height, BACKGROUND_COLOR);
         
-        // Main background
-        guiGraphics.fill(this.guiLeft, this.guiTop, this.guiLeft + GUI_WIDTH, this.guiTop + GUI_HEIGHT, BACKGROUND_COLOR);
+        // Draw main panel with rounded corners
+        drawRoundedRect(guiGraphics, this.guiLeft - 5, this.guiTop - 25, GUI_WIDTH + 10, GUI_HEIGHT + 55, 8, PANEL_COLOR);
         
-        // Draw item slots (9x5 grid)
+        // Draw a header bar
+        guiGraphics.fill(this.guiLeft - 5, this.guiTop - 25, this.guiLeft + GUI_WIDTH + 5, this.guiTop - 5, HEADER_COLOR);
+        
+        // Draw title
+        guiGraphics.drawString(this.font, this.title, this.guiLeft, this.guiTop - 20, ACCENT_COLOR);
+        
+        // Draw search label
+        guiGraphics.drawString(this.font, Component.translatable("itemGroup.search"), 
+                this.guiLeft + 50, this.guiTop - 15, PRIMARY_TEXT);
+        
+        // Draw search box background
+        guiGraphics.fill(this.guiLeft + 82, this.guiTop - 16, this.guiLeft + 162, this.guiTop - 2, 0xFF101010);
+        guiGraphics.fill(this.guiLeft + 82, this.guiTop - 15, this.guiLeft + 162, this.guiTop - 3, 0xFF303030);
+        
+        // Draw page counter with proper spacing
+        String pageInfo = String.format("%d/%d", this.currentPage + 1, this.maxPage);
+        guiGraphics.drawCenteredString(this.font, pageInfo, this.width / 2, this.guiTop + GUI_HEIGHT + 5, PRIMARY_TEXT);
+        
+        // Draw grid background panel
+        guiGraphics.fill(this.guiLeft, this.guiTop, this.guiLeft + GUI_WIDTH, this.guiTop + GUI_HEIGHT, 0xFF202020);
+        
+        // Draw grid slots
         int firstSlotX = this.guiLeft + 8;  
-        int firstSlotY = this.guiTop + 17; 
+        int firstSlotY = this.guiTop + 8; 
         
         for (int row = 0; row < GRID_HEIGHT; row++) {
             for (int col = 0; col < GRID_WIDTH; col++) {
-                drawItemSlot(guiGraphics, firstSlotX + col * SLOT_SIZE, firstSlotY + row * SLOT_SIZE);
+                drawSlot(guiGraphics, firstSlotX + col * SLOT_SIZE, firstSlotY + row * SLOT_SIZE);
             }
         }
-        
-        // Draw title with proper spacing
-        guiGraphics.drawString(this.font, this.title, this.guiLeft + 8, this.guiTop - 30, 0x404040);
-        
-        // Draw search label with proper spacing
-        guiGraphics.drawString(this.font, Component.translatable("itemGroup.search"), 
-                this.guiLeft + 8, this.guiTop - 15, 0x404040);
-        
-        // Draw page info with proper spacing
-        String pageInfo = String.format("%d/%d", this.currentPage + 1, this.maxPage);
-        guiGraphics.drawCenteredString(this.font, pageInfo, 
-                this.width / 2, this.guiTop + GUI_HEIGHT + 3, 0xFFFFFF);
         
         // Draw items in the grid
         int itemsPerPage = GRID_WIDTH * GRID_HEIGHT;
@@ -237,8 +266,8 @@ public class ItemBrowserScreen extends Screen {
             int col = index % GRID_WIDTH;
             
             // Position each item in its proper grid cell
-            int x = firstSlotX + col * SLOT_SIZE + 1;  // +1 to center in slot
-            int y = firstSlotY + row * SLOT_SIZE + 1;  // +1 to center in slot
+            int x = firstSlotX + col * SLOT_SIZE + 1;
+            int y = firstSlotY + row * SLOT_SIZE + 1;
             
             // Draw the item
             Item item = filteredItems.get(i);
@@ -248,7 +277,7 @@ public class ItemBrowserScreen extends Screen {
             
             // Add subtle highlight for custom items
             if (CustomItemsConfig.hasCustomItemData(item)) {
-                guiGraphics.fill(x, y, x + 16, y + 16, 0x1300FF00); // Very subtle green tint
+                guiGraphics.fill(x, y, x + 16, y + 16, CUSTOM_ITEM_HIGHLIGHT);
             }
         }
         
@@ -267,9 +296,9 @@ public class ItemBrowserScreen extends Screen {
                     ItemStack stack = new ItemStack(item);
                     
                     // Highlight the hovered item
-                    int slotX = firstSlotX + col * SLOT_SIZE + 1;
-                    int slotY = firstSlotY + row * SLOT_SIZE + 1;
-                    guiGraphics.fill(slotX, slotY, slotX + 16, slotY + 16, 0x80FFFFFF);
+                    int slotX = firstSlotX + col * SLOT_SIZE;
+                    int slotY = firstSlotY + row * SLOT_SIZE;
+                    guiGraphics.fill(slotX + 1, slotY + 1, slotX + SLOT_SIZE - 1, slotY + SLOT_SIZE - 1, SLOT_HIGHLIGHT);
                     
                     // Draw tooltip
                     guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
@@ -277,20 +306,24 @@ public class ItemBrowserScreen extends Screen {
             }
         }
         
+        // Draw count information
+        String countInfo = String.format("%d items", filteredItems.size());
+        guiGraphics.drawString(this.font, countInfo, this.guiLeft + GUI_WIDTH - this.font.width(countInfo) - 8, 
+                this.guiTop - 20, SECONDARY_TEXT);
+        
         // Render all UI components (buttons, search box, etc.)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Let widgets handle clicks first
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
         
         // Handle item grid clicks
         int firstSlotX = this.guiLeft + 8;
-        int firstSlotY = this.guiTop + 17;
+        int firstSlotY = this.guiTop + 8;
         
         if (mouseX >= firstSlotX && mouseX < firstSlotX + (GRID_WIDTH * SLOT_SIZE) &&
             mouseY >= firstSlotY && mouseY < firstSlotY + (GRID_HEIGHT * SLOT_SIZE)) {
