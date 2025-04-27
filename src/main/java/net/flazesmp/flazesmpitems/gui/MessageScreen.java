@@ -5,7 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style; // Fixed import path
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 
 public class MessageScreen extends Screen {

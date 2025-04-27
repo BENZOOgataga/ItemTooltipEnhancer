@@ -8,10 +8,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,57 +22,79 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ItemBrowserScreen extends Screen {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("textures/gui/container/creative_inventory/tabs.png");
-    private static final int INVENTORY_WIDTH = 195;
-    private static final int INVENTORY_HEIGHT = 136;
-    private static final int SLOT_SIZE = 18;
+    // Constants for GUI dimensions
+    private static final int GUI_WIDTH = 176; // Standard inventory width
+    private static final int GUI_HEIGHT = 130; // Height for just the items section
     private static final int GRID_WIDTH = 9;
     private static final int GRID_HEIGHT = 5;
+    private static final int SLOT_SIZE = 18; // Size of each item slot
     
+    // Colors
+    private static final int BACKGROUND_COLOR = 0xFFC6C6C6; // Light gray
+    private static final int BORDER_DARK = 0xFF555555;
+    private static final int BORDER_LIGHT = 0xFFFFFFFF;
+    private static final int SLOT_COLOR = 0xFF8B8B8B;
+
+    // Position values
     private int guiLeft;
     private int guiTop;
     private int currentPage = 0;
     private int maxPage = 0;
+    
+    // GUI components
     private List<Item> filteredItems = new ArrayList<>();
     private EditBox searchBox;
     private Button prevPageButton;
     private Button nextPageButton;
     private Button customItemsButton;
     private boolean showingCustomItemsOnly = false;
-    
+
     public ItemBrowserScreen() {
         super(Component.translatable("itemtooltipenhancer.gui.browser.title"));
     }
-    
+
     @Override
     protected void init() {
-        this.guiLeft = (this.width - INVENTORY_WIDTH) / 2;
-        this.guiTop = (this.height - INVENTORY_HEIGHT) / 2;
+        this.guiLeft = (this.width - GUI_WIDTH) / 2;
+        this.guiTop = (this.height - GUI_HEIGHT) / 2;
         
-        // Search box
-        this.searchBox = new EditBox(this.font, this.guiLeft + 10, this.guiTop - 20, 175, 14,
+        // Search box - positioned with proper spacing
+        this.searchBox = new EditBox(this.font, this.guiLeft + 82, this.guiTop - 15, 80, 12,
                 Component.translatable("itemtooltipenhancer.gui.search"));
         this.searchBox.setMaxLength(50);
         this.searchBox.setBordered(true);
         this.searchBox.setVisible(true);
-        this.searchBox.setTextColor(0xFFFFFF);
+        this.searchBox.setTextColor(0x000000);
         this.searchBox.setValue("");
         this.searchBox.setResponder(this::updateFilteredItems);
         this.addRenderableWidget(this.searchBox);
-        
-        // Navigation buttons
+
+        // Navigation buttons - positioned with proper spacing on either side
         this.prevPageButton = Button.builder(Component.literal("<"), button -> {
             if (this.currentPage > 0) {
                 this.currentPage--;
+                Minecraft.getInstance().getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
+                    )
+                );
+                updateButtonStates();
             }
-        }).bounds(this.guiLeft - 25, this.guiTop + INVENTORY_HEIGHT/2, 20, 20).build();
+        }).bounds(this.guiLeft - 30, this.guiTop + 60, 20, 20).build();
         
         this.nextPageButton = Button.builder(Component.literal(">"), button -> {
             if (this.currentPage < this.maxPage - 1) {
                 this.currentPage++;
+                Minecraft.getInstance().getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
+                    )
+                );
+                updateButtonStates();
             }
-        }).bounds(this.guiLeft + INVENTORY_WIDTH + 5, this.guiTop + INVENTORY_HEIGHT/2, 20, 20).build();
+        }).bounds(this.guiLeft + GUI_WIDTH + 10, this.guiTop + 60, 20, 20).build();
         
+        // Show all/custom items button - positioned with proper spacing at the bottom
         this.customItemsButton = Button.builder(
             Component.translatable(showingCustomItemsOnly 
                 ? "itemtooltipenhancer.gui.showAll" 
@@ -84,16 +105,24 @@ public class ItemBrowserScreen extends Screen {
                     ? "itemtooltipenhancer.gui.showAll" 
                     : "itemtooltipenhancer.gui.showCustomOnly"));
                 updateFilteredItems(this.searchBox.getValue());
+                
+                Minecraft.getInstance().getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F
+                    )
+                );
             }
-        ).bounds(this.guiLeft + INVENTORY_WIDTH/2 - 70, this.guiTop + INVENTORY_HEIGHT + 10, 140, 20).build();
+        ).bounds(this.guiLeft + (GUI_WIDTH/2) - 70, this.guiTop + GUI_HEIGHT + 15, 140, 20).build();
         
+        // Add all widgets
         this.addRenderableWidget(this.prevPageButton);
         this.addRenderableWidget(this.nextPageButton);
         this.addRenderableWidget(this.customItemsButton);
         
+        // Load items
         updateFilteredItems("");
     }
-    
+
     private void updateFilteredItems(String filter) {
         filteredItems.clear();
         
@@ -130,32 +159,74 @@ public class ItemBrowserScreen extends Screen {
             return id != null ? id.toString() : "";
         }));
         
+        // Calculate page count
         int itemsPerPage = GRID_WIDTH * GRID_HEIGHT;
-        this.maxPage = (int) Math.ceil((double) filteredItems.size() / itemsPerPage);
-        this.maxPage = Math.max(1, this.maxPage);
+        this.maxPage = Math.max(1, (int) Math.ceil((double) filteredItems.size() / itemsPerPage));
         
-        // Adjust current page if needed
+        // Ensure current page is valid
         if (this.currentPage >= this.maxPage) {
-            this.currentPage = this.maxPage - 1;
+            this.currentPage = Math.max(0, this.maxPage - 1);
         }
+        
+        // Update button states
+        updateButtonStates();
     }
     
+    private void updateButtonStates() {
+        // Fix pagination button states
+        this.prevPageButton.active = this.currentPage > 0;
+        this.nextPageButton.active = this.currentPage < this.maxPage - 1;
+    }
+    
+    /**
+     * Draws a Minecraft-style "slot" at the specified coordinates
+     */
+    private void drawItemSlot(GuiGraphics guiGraphics, int x, int y) {
+        // Draw darker background
+        guiGraphics.fill(x, y, x + 18, y + 18, SLOT_COLOR);
+        
+        // Draw slot border
+        guiGraphics.fill(x, y, x + 1, y + 18, BORDER_DARK);  // Left edge
+        guiGraphics.fill(x + 1, y, x + 18, y + 1, BORDER_DARK);  // Top edge
+        guiGraphics.fill(x + 17, y + 1, x + 18, y + 18, BORDER_LIGHT);  // Right edge
+        guiGraphics.fill(x + 1, y + 17, x + 17, y + 18, BORDER_LIGHT);  // Bottom edge
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // Render background texture
         this.renderBackground(guiGraphics);
         
-        // Draw background
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.guiLeft, this.guiTop, 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT);
+        // Draw the custom GUI background - recreating just the items grid part
+        // Outer dark border
+        guiGraphics.fill(this.guiLeft - 1, this.guiTop - 1, this.guiLeft + GUI_WIDTH + 1, this.guiTop + GUI_HEIGHT + 1, BORDER_DARK);
         
-        // Draw title
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.guiTop - 35, 0xFFFFFF);
+        // Main background
+        guiGraphics.fill(this.guiLeft, this.guiTop, this.guiLeft + GUI_WIDTH, this.guiTop + GUI_HEIGHT, BACKGROUND_COLOR);
         
-        // Draw page info
+        // Draw item slots (9x5 grid)
+        int firstSlotX = this.guiLeft + 8;  
+        int firstSlotY = this.guiTop + 17; 
+        
+        for (int row = 0; row < GRID_HEIGHT; row++) {
+            for (int col = 0; col < GRID_WIDTH; col++) {
+                drawItemSlot(guiGraphics, firstSlotX + col * SLOT_SIZE, firstSlotY + row * SLOT_SIZE);
+            }
+        }
+        
+        // Draw title with proper spacing
+        guiGraphics.drawString(this.font, this.title, this.guiLeft + 8, this.guiTop - 30, 0x404040);
+        
+        // Draw search label with proper spacing
+        guiGraphics.drawString(this.font, Component.translatable("itemGroup.search"), 
+                this.guiLeft + 8, this.guiTop - 15, 0x404040);
+        
+        // Draw page info with proper spacing
         String pageInfo = String.format("%d/%d", this.currentPage + 1, this.maxPage);
-        guiGraphics.drawCenteredString(this.font, pageInfo, this.width / 2, this.guiTop + INVENTORY_HEIGHT + 35, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, pageInfo, 
+                this.width / 2, this.guiTop + GUI_HEIGHT + 3, 0xFFFFFF);
         
-        // Draw items
+        // Draw items in the grid
         int itemsPerPage = GRID_WIDTH * GRID_HEIGHT;
         int startIndex = this.currentPage * itemsPerPage;
         int endIndex = Math.min(startIndex + itemsPerPage, filteredItems.size());
@@ -165,28 +236,28 @@ public class ItemBrowserScreen extends Screen {
             int row = index / GRID_WIDTH;
             int col = index % GRID_WIDTH;
             
-            int x = this.guiLeft + 8 + col * SLOT_SIZE;
-            int y = this.guiTop + 18 + row * SLOT_SIZE;
+            // Position each item in its proper grid cell
+            int x = firstSlotX + col * SLOT_SIZE + 1;  // +1 to center in slot
+            int y = firstSlotY + row * SLOT_SIZE + 1;  // +1 to center in slot
             
+            // Draw the item
             Item item = filteredItems.get(i);
             ItemStack stack = new ItemStack(item);
-            
-            // Draw item
             guiGraphics.renderItem(stack, x, y);
             guiGraphics.renderItemDecorations(this.font, stack, x, y);
             
-            // Highlight custom items
+            // Add subtle highlight for custom items
             if (CustomItemsConfig.hasCustomItemData(item)) {
-                guiGraphics.fill(x, y, x + 16, y + 16, 0x3300FF00);
+                guiGraphics.fill(x, y, x + 16, y + 16, 0x1300FF00); // Very subtle green tint
             }
         }
         
-        // Draw hover tooltip
-        if (mouseX >= this.guiLeft + 8 && mouseX <= this.guiLeft + 8 + GRID_WIDTH * SLOT_SIZE &&
-            mouseY >= this.guiTop + 18 && mouseY <= this.guiTop + 18 + GRID_HEIGHT * SLOT_SIZE) {
+        // Draw tooltips for items when hovered
+        if (mouseX >= firstSlotX && mouseX < firstSlotX + (GRID_WIDTH * SLOT_SIZE) &&
+            mouseY >= firstSlotY && mouseY < firstSlotY + (GRID_HEIGHT * SLOT_SIZE)) {
             
-            int col = (mouseX - (this.guiLeft + 8)) / SLOT_SIZE;
-            int row = (mouseY - (this.guiTop + 18)) / SLOT_SIZE;
+            int col = (mouseX - firstSlotX) / SLOT_SIZE;
+            int row = (mouseY - firstSlotY) / SLOT_SIZE;
             
             if (col >= 0 && col < GRID_WIDTH && row >= 0 && row < GRID_HEIGHT) {
                 int index = startIndex + row * GRID_WIDTH + col;
@@ -195,22 +266,37 @@ public class ItemBrowserScreen extends Screen {
                     Item item = filteredItems.get(index);
                     ItemStack stack = new ItemStack(item);
                     
+                    // Highlight the hovered item
+                    int slotX = firstSlotX + col * SLOT_SIZE + 1;
+                    int slotY = firstSlotY + row * SLOT_SIZE + 1;
+                    guiGraphics.fill(slotX, slotY, slotX + 16, slotY + 16, 0x80FFFFFF);
+                    
+                    // Draw tooltip
                     guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
                 }
             }
         }
         
+        // Render all UI components (buttons, search box, etc.)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
-    
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Handle item clicks
-        if (mouseX >= this.guiLeft + 8 && mouseX <= this.guiLeft + 8 + GRID_WIDTH * SLOT_SIZE &&
-            mouseY >= this.guiTop + 18 && mouseY <= this.guiTop + 18 + GRID_HEIGHT * SLOT_SIZE) {
+        // Let widgets handle clicks first
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+        
+        // Handle item grid clicks
+        int firstSlotX = this.guiLeft + 8;
+        int firstSlotY = this.guiTop + 17;
+        
+        if (mouseX >= firstSlotX && mouseX < firstSlotX + (GRID_WIDTH * SLOT_SIZE) &&
+            mouseY >= firstSlotY && mouseY < firstSlotY + (GRID_HEIGHT * SLOT_SIZE)) {
             
-            int col = (int) ((mouseX - (this.guiLeft + 8)) / SLOT_SIZE);
-            int row = (int) ((mouseY - (this.guiTop + 18)) / SLOT_SIZE);
+            int col = (int)((mouseX - firstSlotX) / SLOT_SIZE);
+            int row = (int)((mouseY - firstSlotY) / SLOT_SIZE);
             
             if (col >= 0 && col < GRID_WIDTH && row >= 0 && row < GRID_HEIGHT) {
                 int itemsPerPage = GRID_WIDTH * GRID_HEIGHT;
@@ -220,6 +306,13 @@ public class ItemBrowserScreen extends Screen {
                 if (index < filteredItems.size()) {
                     Item item = filteredItems.get(index);
                     
+                    // Play item select sound
+                    Minecraft.getInstance().getSoundManager().play(
+                        net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 0.8F
+                        )
+                    );
+                        
                     // Open item editor screen
                     Minecraft.getInstance().setScreen(new ItemEditorScreen(item, this));
                     return true;
@@ -227,9 +320,25 @@ public class ItemBrowserScreen extends Screen {
             }
         }
         
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
     
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.searchBox.isFocused() && this.searchBox.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+    
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (this.searchBox.isFocused() && this.searchBox.charTyped(codePoint, modifiers)) {
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
     @Override
     public boolean isPauseScreen() {
         return false;
