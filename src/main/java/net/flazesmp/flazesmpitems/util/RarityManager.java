@@ -1,5 +1,6 @@
 package net.flazesmp.flazesmpitems.util;
 
+import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -51,8 +52,9 @@ public class RarityManager {
      */
     public static void initialize() {
         LOGGER.info("Initializing RarityManager");
-        // Load data from config/storage if needed
-        loadData();
+        
+        // Initialize config system first
+        ConfigManager.initialize();
         
         // Apply manual rarities to specific items
         setupManualRarities();
@@ -126,6 +128,9 @@ public class RarityManager {
             // Apply new rarity color
             setCustomName(item, applyRarityColor(customName, rarity));
         }
+        
+        // Save config file
+        ConfigManager.saveItemConfig(item);
     }
     
     /**
@@ -334,6 +339,9 @@ public class RarityManager {
     public static void setItemCategory(Item item, String category) {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
         ITEM_CATEGORIES.put(id, category);
+        
+        // Save config file
+        ConfigManager.saveItemConfig(item);
     }
     
     /**
@@ -371,6 +379,9 @@ public class RarityManager {
         }
         
         CUSTOM_NAMES.put(id, name);
+        
+        // Save config file
+        ConfigManager.saveItemConfig(item);
     }
     
     /**
@@ -395,6 +406,9 @@ public class RarityManager {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
         Map<Integer, String> itemTooltips = TOOLTIPS.computeIfAbsent(id, k -> new HashMap<>());
         itemTooltips.put(line, text);
+        
+        // Save config file
+        ConfigManager.saveItemConfig(item);
     }
     
     /**
@@ -446,9 +460,9 @@ public class RarityManager {
         Map<Integer, String> itemTooltips = TOOLTIPS.get(id);
         if (itemTooltips != null) {
             itemTooltips.remove(line);
-            if (itemTooltips.isEmpty()) {
-                TOOLTIPS.remove(id);
-            }
+            
+            // Save config file
+            ConfigManager.saveItemConfig(item);
         }
     }
     
@@ -464,6 +478,9 @@ public class RarityManager {
         CUSTOM_NAMES.remove(id);
         TOOLTIPS.remove(id);
         AUTO_RARITY_CACHE.remove(id);
+        
+        // Also delete the config file
+        ConfigManager.deleteItemConfig(item);
         
         LOGGER.info("Cleared all custom data for item: {}", id);
     }
@@ -647,5 +664,13 @@ public class RarityManager {
             ITEM_RARITIES.put(id, rarity);
             AUTO_RARITY_CACHE.remove(id); // Clear from cache if it was there
         }
+    }
+
+    public static boolean hasCustomizations(Item item) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        return ITEM_RARITIES.containsKey(id) ||
+               CUSTOM_NAMES.containsKey(id) ||
+               TOOLTIPS.containsKey(id) ||
+               ITEM_CATEGORIES.containsKey(id);
     }
 }

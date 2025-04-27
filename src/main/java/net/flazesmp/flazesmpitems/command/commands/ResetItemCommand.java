@@ -133,6 +133,8 @@ public class ResetItemCommand implements IModCommand {
                     .withStyle(ChatFormatting.GRAY), false);
             source.sendSuccess(() -> Component.literal("• Rarity reset to COMMON")
                     .withStyle(ChatFormatting.GRAY), false);
+            source.sendSuccess(() -> Component.literal("• Config file deleted")
+                    .withStyle(ChatFormatting.GRAY), false);
             
             return 1;
         } catch (Exception e) {

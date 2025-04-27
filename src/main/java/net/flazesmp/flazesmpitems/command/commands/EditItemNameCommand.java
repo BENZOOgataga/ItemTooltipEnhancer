@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.command.IModCommand;
+import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;

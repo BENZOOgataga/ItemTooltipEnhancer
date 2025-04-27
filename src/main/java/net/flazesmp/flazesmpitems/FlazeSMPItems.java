@@ -1,5 +1,6 @@
 package net.flazesmp.flazesmpitems;
 
+import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -18,7 +19,8 @@ public class FlazeSMPItems {
         // Register to the mod event bus
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
-        // Initialize the RarityManager
+        // Initialize the ConfigManager first, then RarityManager
+        ConfigManager.initialize();
         RarityManager.initialize();
         
         // Register ourselves for server and other game events

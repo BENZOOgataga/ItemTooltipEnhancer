@@ -44,6 +44,7 @@ public class ModCommands {
         EditItemTooltipCommand.register(mainCommand, buildContext);
         EditItemRarityCommand.register(mainCommand, buildContext);
         ResetItemCommand.register(mainCommand, buildContext); // Register the new reset command
+        ReloadConfigCommand.register(mainCommand, buildContext);
         
         // Add help command
         mainCommand.then(Commands.literal("help")
@@ -68,6 +69,7 @@ public class ModCommands {
         source.sendSuccess(() -> Component.literal("/ite editrarity <item> <rarity> - Set item rarity"), false);
         source.sendSuccess(() -> Component.literal("/ite reset [item] - Reset item to default state"), false); // Add help for reset command
         source.sendSuccess(() -> Component.literal("/ite gettexture [item] - Get texture path for an item"), false);
+        source.sendSuccess(() -> Component.literal("/ite reload - Reload item configs from files"), false);
         source.sendSuccess(() -> Component.literal("/ite help - Show this help message"), false);
     }
 }
