@@ -187,7 +187,7 @@ public class SpecialItemTooltipHandler {
         tooltip.add(Component.literal("Track: ")
             .withStyle(ChatFormatting.GRAY)
             .append(Component.literal(trackName)
-            .withStyle(ChatFormatting.AQUA)));
+            .withStyle(ChatFormatting.BLUE)));
     }
     
     /**

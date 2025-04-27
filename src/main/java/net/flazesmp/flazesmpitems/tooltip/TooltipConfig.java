@@ -155,4 +155,14 @@ public class TooltipConfig {
             }
         }
     }
+    
+    private boolean enableRarityColors = true;
+
+    public boolean enableRarityColors() {
+        return enableRarityColors;
+    }
+
+    public void setEnableRarityColors(boolean enableRarityColors) {
+        this.enableRarityColors = enableRarityColors;
+    }
 }

@@ -1,6 +1,8 @@
 package net.flazesmp.flazesmpitems;
 
 import net.flazesmp.flazesmpitems.config.ConfigManager;
+import net.flazesmp.flazesmpitems.event.ItemDisplayNameHandler;
+import net.flazesmp.flazesmpitems.event.ItemTooltipEventHandler;
 import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.flazesmp.flazesmpitems.tooltip.TooltipConfig;
 import net.flazesmp.flazesmpitems.util.RarityManager;
@@ -20,12 +22,15 @@ public class FlazeSMPItems {
     public FlazeSMPItems() {
         // Register to the mod event bus
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        MinecraftForge.EVENT_BUS.register(ItemTooltipEventHandler.class);
+        MinecraftForge.EVENT_BUS.register(ItemDisplayNameHandler.class);
         
         // Register configs first
         TooltipConfig.register();
         
         // Initialize default mappings (without relying on config)
         StatTooltipFormatter.setupDefaultAttributeMappings();
+
         
         // Initialize the ConfigManager
         ConfigManager.initialize();

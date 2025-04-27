@@ -1,71 +1,76 @@
 package net.flazesmp.flazesmpitems.event;
 
-import net.flazesmp.flazesmpitems.FlazeSMPItems;
-import net.flazesmp.flazesmpitems.config.ConfigManager;
+import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.player.PlayerContainerEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
 
-/**
- * Handles ensuring display names are applied consistently
- */
-@Mod.EventBusSubscriber(modid = FlazeSMPItems.MOD_ID)
+@Mod.EventBusSubscriber
 public class ItemDisplayNameHandler {
 
     /**
-     * Apply custom data when a player interacts with an item
+     * Event handler to modify item display names with proper rarity colors
      */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onItemInteract(PlayerInteractEvent event) {
-        ItemStack stack = event.getItemStack();
-        RarityManager.applyCustomDataToItemStack(stack);
+    @SubscribeEvent
+    public static void onItemTooltip(ItemTooltipEvent event) {
+        // Activer la fonctionnalité par défaut
+        // Plus tard, nous pourrons ajouter une option de configuration
         
-        // Optionally reload config on demand for admins holding a debug stick
-        if (event.getEntity().hasPermissions(2) && stack.is(net.minecraft.world.item.Items.DEBUG_STICK)) {
-            // Only reload config if the player is sneaking and it's a right click
-            if (event instanceof PlayerInteractEvent.RightClickItem && event.getEntity().isShiftKeyDown()) {
-                ConfigManager.loadAllConfigs();
-                event.getEntity().sendSystemMessage(net.minecraft.network.chat.Component.literal("ItemTooltipEnhancer configs reloaded"));
-            }
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty()) {
+            return;
         }
+
+        // Get the item's rarity
+        Item item = stack.getItem();
+        ItemRarity rarity = RarityManager.getRarity(item);
+
+        // Get the display name component from the tooltip
+        Component displayName = event.getToolTip().get(0);
+        
+        // Create a new display name with the rarity's color
+        MutableComponent newName;
+        
+        // If the item has a custom name (renamed with an anvil), preserve that formatting
+        if (stack.hasCustomHoverName()) {
+            // Just adjust color if needed, but keep custom formatting
+            Style originalStyle = displayName.getStyle();
+            Style newStyle = originalStyle.withColor(rarity.getColor().getColor());
+            newName = ((MutableComponent)displayName).withStyle(newStyle);
+        } else {
+            // For regular items, completely replace the name with proper rarity color
+            String plainName = displayName.getString();
+            newName = Component.literal(plainName).withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()));
+        }
+        
+        // Replace the first line of the tooltip with our color-corrected name
+        event.getToolTip().set(0, newName);
     }
     
     /**
-     * Apply custom data when a player opens a container
-     * This ensures items in chests, etc. display correctly
+     * Helper method to determine if a specific chat formatting is applied to a component
      */
-    @SubscribeEvent
-    public static void onContainerOpen(PlayerContainerEvent.Open event) {
-        event.getContainer().getItems().forEach(RarityManager::applyCustomDataToItemStack);
-    }
-    
-    /**
-     * Apply custom data when player picks up an item
-     */
-    @SubscribeEvent
-    public static void onItemPickup(PlayerEvent.ItemPickupEvent event) {
-        RarityManager.applyCustomDataToItemStack(event.getStack());
-    }
-    
-    /**
-     * Apply custom data when player changes held item slot
-     */
-    @SubscribeEvent
-    public static void onItemHeld(net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent event) {
-        if (event.getEntity() instanceof net.minecraft.world.entity.player.Player player && 
-            event.getSlot() == net.minecraft.world.entity.EquipmentSlot.MAINHAND) {
-            
-            ItemStack stack = event.getTo();
-            if (!stack.isEmpty()) {
-                RarityManager.applyCustomDataToItemStack(stack);
-            }
+    private static boolean hasFormatting(Component component, ChatFormatting formatting) {
+        Style style = component.getStyle();
+        if (formatting.isColor()) {
+            return style.getColor() != null && 
+                   style.getColor().getValue() == formatting.getColor();
+        } else {
+            return switch (formatting) {
+                case BOLD -> style.isBold();
+                case ITALIC -> style.isItalic();
+                case UNDERLINE -> style.isUnderlined();
+                case STRIKETHROUGH -> style.isStrikethrough();
+                case OBFUSCATED -> style.isObfuscated();
+                default -> false;
+            };
         }
     }
 }
