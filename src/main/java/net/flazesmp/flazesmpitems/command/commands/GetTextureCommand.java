@@ -2,6 +2,7 @@ package net.flazesmp.flazesmpitems.command.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.util.TextureUtil;
@@ -21,21 +22,32 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class GetTextureCommand implements IModCommand {
     
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        // We'll use the simpler version without ItemArgument since it requires CommandBuildContext
+    /**
+     * Registers this command as a standalone command (no longer used)
+     */
+    @Deprecated
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
         dispatcher.register(Commands.literal("gettexture")
-            .requires(source -> source.hasPermission(0)) // Permission level 0 means anyone can use it
+            .requires(source -> source.hasPermission(0))
             .executes(context -> getTextureForHeldItem(context.getSource()))
+            .then(Commands.argument("item", ItemArgument.item(buildContext))
+                .executes(context -> getTextureForSpecifiedItem(
+                    context.getSource(), 
+                    ItemArgument.getItem(context, "item").getItem())))
             .then(Commands.argument("itemId", StringArgumentType.string())
                 .executes(context -> getTextureForItemId(
                     context.getSource(), 
                     StringArgumentType.getString(context, "itemId")))));
     }
     
-    // Updated version that requires CommandBuildContext
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
-        dispatcher.register(Commands.literal("gettexture")
-            .requires(source -> source.hasPermission(0))
+    /**
+     * Registers this command as a subcommand of a main command
+     * 
+     * @param parent The parent command builder to attach this subcommand to
+     * @param buildContext The command build context
+     */
+    public static void register(LiteralArgumentBuilder<CommandSourceStack> parent, CommandBuildContext buildContext) {
+        parent.then(Commands.literal("gettexture")
             .executes(context -> getTextureForHeldItem(context.getSource()))
             .then(Commands.argument("item", ItemArgument.item(buildContext))
                 .executes(context -> getTextureForSpecifiedItem(
@@ -89,7 +101,6 @@ public class GetTextureCommand implements IModCommand {
     private static void sendTextureInfo(CommandSourceStack source, Item item, String texturePath) {
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
         
-        // Fixed sendSuccess calls to match the expected function signature
         Component message = Component.literal("Item: ")
             .withStyle(ChatFormatting.YELLOW)
             .append(Component.literal(itemId.toString())
