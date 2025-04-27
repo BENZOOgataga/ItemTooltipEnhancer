@@ -6,25 +6,25 @@
 # The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
-license="MIT"
+license="All Rights Reserved"
 
 [[mods]]
-modId="flazesmpitems"
+modId="itemtooltipenhancer"
 version="${mod_version}"
-displayName="ItemTooltipEnhancer"
-authors="BENZOOgataga,FlazeSMPDevTeam"
+displayName="Item Tooltip Enhancer"
+authors="BENZOOgataga, FlazeSMPDevTeam"
 description='''
 Enhances item tooltips with rarity information similar to Hypixel Skyblock.
 '''
 
-[[dependencies.flazesmpitems]]
+[[dependencies.itemtooltipenhancer]]
     modId="forge"
     mandatory=true
     versionRange="${forge_version_range}"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.flazesmpitems]]
+[[dependencies.itemtooltipenhancer]]
     modId="minecraft"
     mandatory=true
     versionRange="${minecraft_version_range}"

@@ -7,7 +7,11 @@ public enum ItemRarity {
     UNCOMMON("Uncommon", ChatFormatting.GREEN),
     RARE("Rare", ChatFormatting.BLUE),
     EPIC("Epic", ChatFormatting.DARK_PURPLE),
-    LEGENDARY("Legendary", ChatFormatting.GOLD);
+    LEGENDARY("Legendary", ChatFormatting.GOLD),
+    SPECIAL("Special", ChatFormatting.RED),
+    MYTHIC("Mythic", ChatFormatting.LIGHT_PURPLE),
+    ADMIN("Admin", ChatFormatting.RED);
+
 
     private final String name;
     private final ChatFormatting color;

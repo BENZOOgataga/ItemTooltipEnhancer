@@ -1,35 +1,40 @@
 package net.flazesmp.flazesmpitems.util;
 
+import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.minecraft.world.item.*;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RarityManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RarityManager.class);
     private static final Map<Item, ItemRarity> ITEM_RARITY_MAP = new HashMap<>();
     private static final Map<Item, String> ITEM_CATEGORY_MAP = new HashMap<>();
     
-    // Categories based on vanilla groups
-    private static final Map<String, String> CATEGORY_MAPPING = new HashMap<>();
+    // List of admin/unobtainable items
+    private static final Set<Item> ADMIN_ITEMS = new HashSet<>();
     
     static {
-        // Initialize category mappings
-        CATEGORY_MAPPING.put("building_blocks", "Building Blocks");
-        CATEGORY_MAPPING.put("decorations", "Decoration");
-        CATEGORY_MAPPING.put("redstone", "Redstone");
-        CATEGORY_MAPPING.put("transportation", "Transportation");
-        CATEGORY_MAPPING.put("misc", "Miscellaneous");
-        CATEGORY_MAPPING.put("food", "Food");
-        CATEGORY_MAPPING.put("tools", "Tools");
-        CATEGORY_MAPPING.put("combat", "Combat");
-        CATEGORY_MAPPING.put("brewing", "Brewing");
-        CATEGORY_MAPPING.put("materials", "Materials");
-        CATEGORY_MAPPING.put("spawn_eggs", "Spawn Eggs");
+        // Initialize admin items set
+        ADMIN_ITEMS.add(Items.BARRIER);
+        ADMIN_ITEMS.add(Items.COMMAND_BLOCK);
+        ADMIN_ITEMS.add(Items.CHAIN_COMMAND_BLOCK);
+        ADMIN_ITEMS.add(Items.REPEATING_COMMAND_BLOCK);
+        ADMIN_ITEMS.add(Items.COMMAND_BLOCK_MINECART);
+        ADMIN_ITEMS.add(Items.STRUCTURE_BLOCK);
+        ADMIN_ITEMS.add(Items.STRUCTURE_VOID);
+        ADMIN_ITEMS.add(Items.JIGSAW);
+        ADMIN_ITEMS.add(Items.LIGHT);
+        ADMIN_ITEMS.add(Items.DEBUG_STICK);
+        ADMIN_ITEMS.add(Items.KNOWLEDGE_BOOK);
+        ADMIN_ITEMS.add(Items.BEDROCK);
+        ADMIN_ITEMS.add(Items.END_PORTAL_FRAME);
     }
 
     public static void initialize() {
@@ -44,6 +49,42 @@ public class RarityManager {
                 ITEM_CATEGORY_MAP.put(item, category);
             }
         });
+        
+        // Add ADMIN rarity to all unobtainable/operator items
+        assignAdminRarityToItems();
+    }
+
+    /**
+     * Assigns the ADMIN rarity to all items that are typically only available to operators
+     * or are otherwise unobtainable in survival gameplay
+     */
+    private static void assignAdminRarityToItems() {
+        // First, mark all predefined admin items
+        for (Item item : ADMIN_ITEMS) {
+            ITEM_RARITY_MAP.put(item, ItemRarity.ADMIN);
+            ITEM_CATEGORY_MAP.put(item, "Admin Items");
+        }
+        
+        // Then scan for other admin items based on patterns
+        ForgeRegistries.ITEMS.forEach(item -> {
+            ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(item);
+            if (registryName != null) {
+                String path = registryName.getPath();
+                
+                // Check for items that match known admin/creative-only patterns
+                if (path.contains("command_block") || 
+                    path.contains("structure_") || 
+                    path.contains("debug_") || 
+                    path.equals("barrier") || 
+                    path.equals("bedrock") || 
+                    path.equals("light") ||
+                    path.equals("reinforced_deepslate")) {
+                    
+                    ITEM_RARITY_MAP.put(item, ItemRarity.ADMIN);
+                    ITEM_CATEGORY_MAP.putIfAbsent(item, "Admin Items");
+                }
+            }
+        });
     }
 
     public static ItemRarity getRarity(Item item) {
@@ -55,6 +96,16 @@ public class RarityManager {
     }
     
     private static String determineCategory(Item item) {
+        // Admin items get their own category
+        if (ADMIN_ITEMS.contains(item)) {
+            return "Admin Items";
+        }
+        
+        // Check for spawn eggs as their own category
+        if (item instanceof SpawnEggItem) {
+            return "Spawn Eggs";
+        }
+        
         // Try to determine category based on item properties
         if (item instanceof ArmorItem) {
             return "Armor";
@@ -110,15 +161,48 @@ public class RarityManager {
     }
 
     private static ItemRarity determineRarity(Item item) {
+        // Check for admin/unobtainable items first
+        if (ADMIN_ITEMS.contains(item)) {
+            return ItemRarity.ADMIN;
+        }
+        
+        ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(item);
+        if (registryName != null) {
+            String path = registryName.getPath();
+            
+            // Check for items that match known admin patterns
+            if (path.contains("command_block") || 
+                path.contains("structure_") || 
+                path.contains("debug_") || 
+                path.equals("barrier") || 
+                path.equals("bedrock") || 
+                path.equals("light") ||
+                path.contains("infested_") ||
+                path.contains("spawner") ||
+                path.equals("reinforced_deepslate")) {
+                
+                return ItemRarity.ADMIN;
+            }
+        }
+        
+        // Special case for spawn eggs - make them EPIC rarity instead of ADMIN
+        if (item instanceof SpawnEggItem) {
+            return ItemRarity.EPIC;
+        }
+        
         if (item instanceof EnchantedBookItem) {
             return ItemRarity.RARE;
         }
         
         // Check for specific items
-        if (item == Items.NETHER_STAR || item == Items.DRAGON_EGG || 
-            item == Items.END_CRYSTAL || item == Items.BEACON || 
-            item == Items.ELYTRA || item == Items.TOTEM_OF_UNDYING || 
-            item == Items.TRIDENT || item == Items.ENCHANTED_GOLDEN_APPLE) {
+        if (item == Items.NETHER_STAR || 
+            item == Items.END_CRYSTAL || 
+            item == Items.BEACON || 
+            item == Items.ELYTRA || 
+            item == Items.TOTEM_OF_UNDYING || 
+            item == Items.TRIDENT || 
+            item == Items.ENCHANTED_GOLDEN_APPLE ||
+            item == Items.DRAGON_EGG) {
             return ItemRarity.LEGENDARY;
         }
         
@@ -156,7 +240,6 @@ public class RarityManager {
         if (item == Items.DRAGON_BREATH || 
             item == Items.HEART_OF_THE_SEA || 
             item == Items.NAUTILUS_SHELL || 
-            item == Items.END_PORTAL_FRAME || 
             item == Items.CONDUIT || 
             item == Items.SHULKER_SHELL || 
             item == Items.MUSIC_DISC_PIGSTEP ||
@@ -186,5 +269,17 @@ public class RarityManager {
 
         // Default rarity
         return ItemRarity.COMMON;
+    }
+    
+    public static void forceRarity(Item item, ItemRarity rarity) {
+        ITEM_RARITY_MAP.put(item, rarity);
+        
+        if (!ITEM_CATEGORY_MAP.containsKey(item)) {
+            // Determine a category based on the item
+            String category = determineCategory(item);
+            if (category != null) {
+                ITEM_CATEGORY_MAP.put(item, category);
+            }
+        }
     }
 }

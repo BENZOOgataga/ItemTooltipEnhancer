@@ -1,55 +1,73 @@
 package net.flazesmp.flazesmpitems.event;
 
+import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Optional;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@Mod.EventBusSubscriber(modid = FlazeSMPItems.MOD_ID)
 public class ItemTooltipEventHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ItemTooltipEventHandler.class);
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
-    public void onItemTooltip(ItemTooltipEvent event) {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
         Item item = stack.getItem();
         
-        ItemRarity rarity = RarityManager.getRarity(item);
+        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
+        if (itemId == null) return;
         
-        // Apply rarity color to the item's name
+        // Get rarity from RarityManager
+        ItemRarity rarity = RarityManager.getRarity(item);
+
+        // Apply rarity color to item name
         Component originalName = event.getItemStack().getHoverName();
         Component coloredName = Component.literal(originalName.getString())
                 .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()));
-        
-        // Replace the original name with our colored version
         event.getToolTip().set(0, coloredName);
         
-        // Get the item category if available
+        // Get item category
         String category = RarityManager.getItemCategory(item);
         
-        if (category != null && !category.isEmpty()) {
-            // Add category line with dark gray color
-            Component categoryLine = Component.literal(category)
-                    .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
-            event.getToolTip().add(1, categoryLine);
+        // Create rarity component
+        Component rarityLine = Component.literal(rarity.getName().toUpperCase())
+            .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
             
-            // Add rarity after category
-            Component rarityLine = Component.literal(rarity.getName().toUpperCase())
-                    .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
+        if (category != null && !category.isEmpty()) {
+            Component categoryLine = Component.literal(category)
+                .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
+            event.getToolTip().add(1, categoryLine);
             event.getToolTip().add(2, rarityLine);
         } else {
-            // No category, just add rarity
-            Component rarityLine = Component.literal(rarity.getName().toUpperCase())
-                    .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
             event.getToolTip().add(1, rarityLine);
+        }
+        
+        // Remove mod name from tooltip
+        removeModNameFromTooltip(event.getToolTip());
+    }
+    
+    private static void removeModNameFromTooltip(List<Component> tooltip) {
+        if (tooltip.size() > 1) {
+            Component lastLine = tooltip.get(tooltip.size() - 1);
+            if (lastLine.getStyle().getColor() != null && 
+                (lastLine.getStyle().getColor().getValue() == ChatFormatting.BLUE.getColor() ||
+                 lastLine.getStyle().getColor().getValue() == ChatFormatting.AQUA.getColor())) {
+                tooltip.remove(tooltip.size() - 1);
+            }
         }
     }
 }

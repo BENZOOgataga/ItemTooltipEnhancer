@@ -1,7 +1,7 @@
 package net.flazesmp.flazesmpitems;
 
 import com.mojang.logging.LogUtils;
-import net.flazesmp.flazesmpitems.event.ItemTooltipEventHandler;
+import net.flazesmp.flazesmpitems.item.ModItems;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -16,33 +16,36 @@ import org.slf4j.Logger;
 
 @Mod(FlazeSMPItems.MOD_ID)
 public class FlazeSMPItems {
-    public static final String MOD_ID = "flazesmpitems";
+    public static final String MOD_ID = "itemtooltipenhancer";
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public FlazeSMPItems() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
+        // Register item registry - even though we don't have test items anymore,
+        // we keep this for future extensibility
+        ModItems.register(modEventBus);
+        
         modEventBus.addListener(this::commonSetup);
 
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new ItemTooltipEventHandler());
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("ItemTooltipEnhancer: Initializing rarity system");
-        RarityManager.initialize();
+        event.enqueueWork(RarityManager::initialize);
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // Server starting code
+        // Server starting code if needed
     }
 
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // Client setup code
+            // No specific client setup needed at this point
         }
     }
 }
