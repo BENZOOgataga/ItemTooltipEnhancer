@@ -605,10 +605,15 @@ public class RarityManager {
      * Determines an item's category automatically if not set manually
      */
     public static String determineItemCategory(Item item) {
-        // Check if manually set first
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
-        if (ITEM_CATEGORIES.containsKey(id)) {
-            return ITEM_CATEGORIES.get(id);
+        // Check if item is a potion
+        if (item == Items.POTION) {
+            return "Potion";
+        } else if (item == Items.SPLASH_POTION) {
+            return "Splash Potion";
+        } else if (item == Items.LINGERING_POTION) {
+            return "Lingering Potion";
+        } else if (item == Items.TIPPED_ARROW) {
+            return "Arrow with Effect";
         }
         
         // Weapons category
@@ -635,15 +640,6 @@ public class RarityManager {
         // Food category
         if (item.isEdible()) {
             return "Food";
-        }
-        
-        // Potion category
-        if (item instanceof PotionItem || 
-            item == Items.POTION || 
-            item == Items.SPLASH_POTION || 
-            item == Items.LINGERING_POTION || 
-            item == Items.TIPPED_ARROW) {
-            return "Potion";
         }
         
         // Music category
@@ -717,9 +713,6 @@ public class RarityManager {
 
     /**
      * Determines the appropriate type suffix for an item
-     * 
-     * @param item The item to check
-     * @return The item type suffix, or empty string if no specific type
      */
     private static String determineItemTypeSuffix(Item item) {
         // Weapons
@@ -779,12 +772,6 @@ public class RarityManager {
         if (item.isEdible()) {
             if (item == Items.GOLDEN_APPLE || item == Items.ENCHANTED_GOLDEN_APPLE) {
                 return "APPLE";
-            } else if (item instanceof PotionItem || 
-                       item == Items.POTION || 
-                       item == Items.SPLASH_POTION || 
-                       item == Items.LINGERING_POTION || 
-                       item == Items.TIPPED_ARROW) {
-                return "Potion";
             } else {
                 return "FOOD";
             }

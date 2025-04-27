@@ -76,52 +76,63 @@ public class SpecialItemTooltipHandler {
         List<MobEffectInstance> effects = PotionUtils.getMobEffects(stack);
         Potion potion = PotionUtils.getPotion(stack);
         
-        // If empty potion with just water, don't add anything
+        // If empty potion with just water, say so
         if (effects.isEmpty() && potion.getName("").equals("")) {
+            tooltip.add(Component.literal("")); // Empty line
             tooltip.add(Component.literal("No Effects")
                 .withStyle(ChatFormatting.GRAY));
             return;
         }
-        
-        // Add each effect with duration and amplifier
-        for (MobEffectInstance effect : effects) {
-            MutableComponent effectComponent = formatPotionEffect(effect);
-            tooltip.add(effectComponent);
+
+        // Only add the EFFECTS header if we actually have effects to display
+        if (!effects.isEmpty()) {
+            // Add the EFFECTS header
+            tooltip.add(Component.literal("")); // Empty line before the effects section
+            tooltip.add(Component.literal("EFFECTS")
+                .withStyle(ChatFormatting.AQUA)
+                .withStyle(ChatFormatting.BOLD));
+            
+            // Add each effect with duration on its own line
+            for (MobEffectInstance effect : effects) {
+                MobEffect mobEffect = effect.getEffect();
+                String effectName = Component.translatable(mobEffect.getDescriptionId()).getString();
+                
+                // Format effect level (I, II, III, etc.)
+                if (effect.getAmplifier() > 0) {
+                    effectName += " " + toRomanNumeral(effect.getAmplifier() + 1);
+                }
+                
+                // Get duration
+                String duration = formatDuration(effect);
+                
+                // Determine color based on beneficial or harmful effect
+                ChatFormatting effectColor = getEffectColor(mobEffect);
+                
+                // Add effect name
+                tooltip.add(Component.literal(effectName)
+                    .withStyle(effectColor));
+                
+                // Add duration on a separate line with indentation if effect has duration
+                if (effect.getDuration() > 20) { // More than 1 second
+                    tooltip.add(Component.literal("  Duration: ")
+                        .withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal(duration)
+                        .withStyle(ChatFormatting.WHITE)));
+                }
+            }
+        } else {
+            // Handle potions with a potion type but no effects 
+            // (rare case, but could happen with some mods or custom potions)
+            if (!potion.getName("").equals("")) {
+                tooltip.add(Component.literal("")); // Empty line
+                tooltip.add(Component.literal("Custom Potion")
+                    .withStyle(ChatFormatting.GRAY));
+            }
         }
         
-        // Get potion type info (splash, lingering)
-        String potionType = getPotionType(stack);
-        if (!potionType.isEmpty()) {
-            tooltip.add(Component.literal("")); // Empty line
-            tooltip.add(Component.literal(potionType)
-                .withStyle(ChatFormatting.DARK_GRAY));
-        }
-    }
-    
-    /**
-     * Format a single potion effect in Hypixel style
-     */
-    private static MutableComponent formatPotionEffect(MobEffectInstance effect) {
-        MobEffect mobEffect = effect.getEffect();
-        String effectName = Component.translatable(mobEffect.getDescriptionId()).getString();
-        
-        // Format effect level (I, II, III, etc.)
-        String levelString = "";
-        if (effect.getAmplifier() > 0) {
-            levelString = " " + toRomanNumeral(effect.getAmplifier() + 1);
-        }
-        
-        // Format duration
-        String durationString = "";
-        if (effect.getDuration() > 20) { // If duration is more than 1 second
-            durationString = " (" + formatDuration(effect) + ")";
-        }
-        
-        // Combine all parts
-        ChatFormatting effectColor = getEffectColor(mobEffect);
-        
-        return Component.literal(effectName + levelString + durationString)
-            .withStyle(effectColor);
+        // Get potion type info (splash, lingering, arrow)
+        // NOTE: Ne pas ajouter cette information ici, car elle sera ajoutée par le système de catégorie
+        // dans ItemTooltipEventHandler
     }
     
     /**
@@ -135,9 +146,14 @@ public class SpecialItemTooltipHandler {
      * Format duration in a readable format (mm:ss)
      */
     private static String formatDuration(MobEffectInstance effect) {
-        // Use vanilla formatter but clean up the output
-        String formattedTime = MobEffectUtil.formatDuration(effect, 1.0F).getString();
-        return formattedTime;
+        // Get milliseconds
+        float durationInTicks = effect.getDuration();
+        float durationInSeconds = durationInTicks / 20.0F;
+        
+        int minutes = (int)(durationInSeconds / 60.0F);
+        int seconds = (int)(durationInSeconds % 60.0F);
+        
+        return String.format("%d:%02d", minutes, seconds);
     }
     
     /**
@@ -163,8 +179,6 @@ public class SpecialItemTooltipHandler {
             tooltip.subList(1, tooltip.size()).clear();
         }
         
-        RecordItem recordItem = (RecordItem) stack.getItem();
-        
         // Get track name - handle both vanilla and modded discs
         String trackName = getTrackName(stack);
         
@@ -173,12 +187,7 @@ public class SpecialItemTooltipHandler {
         tooltip.add(Component.literal("Track: ")
             .withStyle(ChatFormatting.GRAY)
             .append(Component.literal(trackName)
-                .withStyle(ChatFormatting.YELLOW)));
-                
-        // Add disc type
-        tooltip.add(Component.literal(""));
-        tooltip.add(Component.literal("MUSIC DISC")
-            .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY)));
+            .withStyle(ChatFormatting.AQUA)));
     }
     
     /**
@@ -218,5 +227,32 @@ public class SpecialItemTooltipHandler {
             case 10 -> "X";
             default -> String.valueOf(number);
         };
+    }
+    
+    /**
+     * Try to extract custom potion effects from the stack if they exist
+     * This helps with modded potions that might store effects differently
+     */
+    private static List<MobEffectInstance> extractCustomEffects(ItemStack stack) {
+        List<MobEffectInstance> customEffects = new ArrayList<>();
+        
+        if (stack.hasTag()) {
+            CompoundTag tag = stack.getTag();
+            
+            // Check for vanilla custom potion effects
+            if (tag.contains("CustomPotionEffects", 9)) {
+                ListTag listTag = tag.getList("CustomPotionEffects", 10);
+                
+                for (int i = 0; i < listTag.size(); i++) {
+                    CompoundTag effectTag = listTag.getCompound(i);
+                    MobEffectInstance effect = MobEffectInstance.load(effectTag);
+                    if (effect != null) {
+                        customEffects.add(effect);
+                    }
+                }
+            }
+        }
+        
+        return customEffects;
     }
 }

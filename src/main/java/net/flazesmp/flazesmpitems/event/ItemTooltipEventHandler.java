@@ -105,8 +105,11 @@ public class ItemTooltipEventHandler {
                     .withStyle(Style.EMPTY.withColor(rarity.getColor().getColor()).withBold(true));
             }
             
-            // If category exists, show it above rarity at the bottom
+            // If category exists, show it above rarity at the bottom with an empty line before it
             if (category != null && !category.isEmpty()) {
+                // Add empty line before category for better spacing
+                tooltip.add(Component.literal(""));
+                
                 Component categoryLine = Component.literal(category)
                     .withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY));
                 tooltip.add(categoryLine);
