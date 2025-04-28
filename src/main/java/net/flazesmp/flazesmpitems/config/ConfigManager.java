@@ -407,4 +407,27 @@ public class ConfigManager {
             LOGGER.info("Configuration integrity check passed.");
         }
     }
+    
+    /**
+     * Check if an item has explicit customizations set in config
+     * @param itemId The item's resource location
+     * @return True if the item has custom data in config
+     */
+    public static boolean hasCustomItemData(ResourceLocation itemId) {
+        if (itemId == null) return false;
+        
+        try {
+            // Check if we have a config file for this item
+            Path configPath = FMLPaths.GAMEDIR.get().resolve("config")
+                    .resolve(CONFIG_DIR)
+                    .resolve("items")
+                    .resolve(itemId.getNamespace())
+                    .resolve(itemId.getPath() + ".json");
+            
+            return Files.exists(configPath);
+        } catch (Exception e) {
+            LOGGER.error("Error checking custom item data for {}: {}", itemId, e.getMessage());
+            return false;
+        }
+    }
 }

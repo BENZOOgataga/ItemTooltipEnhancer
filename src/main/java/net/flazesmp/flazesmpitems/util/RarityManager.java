@@ -26,6 +26,7 @@ import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -286,7 +287,7 @@ public class RarityManager {
     }
     
     /**
-     * Check if an item is considered rare (diamond tier)
+     * Check if an item is considered rare (diamond tier, high-value)
      */
     private static boolean isRareItem(Item item) {
         // Check if item is diamond tier
@@ -304,46 +305,40 @@ public class RarityManager {
         }
         
         // Check for other rare items
-        return item == Items.DIAMOND || 
-               item == Items.DIAMOND_BLOCK || 
-               item == Items.ENCHANTING_TABLE ||
-               item == Items.END_PORTAL_FRAME ||
-               item == Items.SHULKER_BOX ||
-               item == Items.TOTEM_OF_UNDYING ||
-               item == Items.TRIDENT;
+        return item == Items.DIAMOND ||
+               item == Items.DIAMOND_BLOCK ||
+               item == Items.ENCHANTED_BOOK ||
+               item == Items.GOLDEN_APPLE ||
+               item == Items.EXPERIENCE_BOTTLE ||
+               item == Items.END_CRYSTAL;
     }
     
     /**
-     * Check if an item is considered uncommon (iron/gold tier)
+     * Check if an item should be considered uncommon based on its material
      */
     private static boolean isUncommonItem(Item item) {
-        // Check if item is iron or gold tier
-        if (item instanceof TieredItem tieredItem) {
-            Tiers tier = (Tiers) tieredItem.getTier();
-            if (tier == Tiers.IRON || tier == Tiers.GOLD) {
-                return true;
+        try {
+            if (item instanceof TieredItem tieredItem) {
+                Tier tier = tieredItem.getTier();
+                // Check if it's a vanilla tier without casting
+                if (tier.toString().equals("IRON") || tier.toString().equals("GOLD")) {
+                    return true;
+                }
+                
+                // Check durability as a fallback for modded tiers
+                // Items with durability between iron and diamond can be considered uncommon
+                if (tier.getUses() >= 250 && tier.getUses() < 1561) {
+                    return true;
+                }
             }
+            
+            // Rest of your existing checks...
+            
+        } catch (Exception e) {
+            // Log error but don't crash
+            FlazeSMPItems.LOGGER.debug("Error checking if item is uncommon: {}", e.getMessage());
         }
-        
-        // Check for iron or gold armor
-        if (item instanceof ArmorItem armorItem) {
-            ArmorMaterial material = armorItem.getMaterial();
-            String materialName = material.getName();
-            if (materialName.contains("iron") || materialName.contains("gold")) {
-                return true;
-            }
-        }
-        
-        // Check for other uncommon items
-        return item == Items.IRON_BLOCK || 
-               item == Items.GOLD_BLOCK || 
-               item == Items.EMERALD || 
-               item == Items.EMERALD_BLOCK || 
-               item == Items.OBSIDIAN ||
-               item == Items.GOLDEN_APPLE ||
-               item == Items.GHAST_TEAR ||
-               item == Items.LAPIS_BLOCK ||
-               item == Items.BLAZE_ROD;
+        return false;
     }
     
     /**

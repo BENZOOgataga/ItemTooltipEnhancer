@@ -43,8 +43,9 @@ public class ModCommands {
         EditItemNameCommand.register(mainCommand, buildContext);
         EditItemTooltipCommand.register(mainCommand, buildContext);
         EditItemRarityCommand.register(mainCommand, buildContext);
-        ResetItemCommand.register(mainCommand, buildContext); // Register the new reset command
+        ResetItemCommand.register(mainCommand, buildContext);
         ReloadConfigCommand.register(mainCommand, buildContext);
+        DumpItemsCommand.register(mainCommand, buildContext); // Register the new dumpitems command
         
         // Add help command
         mainCommand.then(Commands.literal("help")
@@ -67,8 +68,9 @@ public class ModCommands {
         source.sendSuccess(() -> Component.literal("/ite editdisplayname <item> <name> - Set custom display name"), false);
         source.sendSuccess(() -> Component.literal("/ite edittooltip <item> <line> <text> - Set tooltip line"), false);
         source.sendSuccess(() -> Component.literal("/ite editrarity <item> <rarity> - Set item rarity"), false);
-        source.sendSuccess(() -> Component.literal("/ite reset [item] - Reset item to default state"), false); // Add help for reset command
+        source.sendSuccess(() -> Component.literal("/ite reset [item] - Reset item to default state"), false);
         source.sendSuccess(() -> Component.literal("/ite gettexture [item] - Get texture path for an item"), false);
+        source.sendSuccess(() -> Component.literal("/ite dumpitems - Dump all items to a text file"), false); // Add help for the new command
         source.sendSuccess(() -> Component.literal("/ite reload - Reload item configs from files"), false);
         source.sendSuccess(() -> Component.literal("/ite help - Show this help message"), false);
     }
