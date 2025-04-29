@@ -28,7 +28,7 @@
     # Reset command tooltip messages
     "command.reset.tooltip.displayname" = "• Display name reset to default"
     "command.reset.tooltip.tooltips" = "• Custom tooltips removed"
-    "command.reset.tooltip.rarity" = "• Rarity reset to {0}"
+    "command.reset.tooltip.rarity" = "• Rarity reset to default"
     "command.reset.tooltip.config" = "• Config file deleted"
     
     # Item command messages

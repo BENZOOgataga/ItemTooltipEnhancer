@@ -96,53 +96,71 @@ public class RarityManager {
     }
     
     /**
+     * Store default rarity for an item during initialization
+     */
+    private static void storeDefaultRarity(Item item, ItemRarity rarity) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        if (id != null) {
+            DEFAULT_RARITIES.put(id, rarity);
+        }
+    }
+    
+    /**
      * Sets up manual rarity assignments for special items
      */
     private static void setupManualRarities() {
         // Admin tier items - operator/creative only items
-        setRarityForItem(Items.COMMAND_BLOCK, ItemRarity.ADMIN);
-        setRarityForItem(Items.CHAIN_COMMAND_BLOCK, ItemRarity.ADMIN);
-        setRarityForItem(Items.REPEATING_COMMAND_BLOCK, ItemRarity.ADMIN);
-        setRarityForItem(Items.COMMAND_BLOCK_MINECART, ItemRarity.ADMIN);
-        setRarityForItem(Items.STRUCTURE_BLOCK, ItemRarity.ADMIN);
-        setRarityForItem(Items.STRUCTURE_VOID, ItemRarity.ADMIN);
-        setRarityForItem(Items.JIGSAW, ItemRarity.ADMIN);
-        setRarityForItem(Items.BARRIER, ItemRarity.ADMIN);
-        setRarityForItem(Items.LIGHT, ItemRarity.ADMIN);
-        setRarityForItem(Items.DEBUG_STICK, ItemRarity.ADMIN);
-        setRarityForItem(Items.KNOWLEDGE_BOOK, ItemRarity.ADMIN);
-        setRarityForItem(Items.BEDROCK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.COMMAND_BLOCK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.CHAIN_COMMAND_BLOCK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.REPEATING_COMMAND_BLOCK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.COMMAND_BLOCK_MINECART, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.STRUCTURE_BLOCK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.STRUCTURE_VOID, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.JIGSAW, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.BARRIER, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.LIGHT, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.DEBUG_STICK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.KNOWLEDGE_BOOK, ItemRarity.ADMIN);
+        storeAndSetRarity(Items.BEDROCK, ItemRarity.ADMIN);
         
         // Legendary tier - unique or extremely rare items
-        setRarityForItem(Items.DRAGON_EGG, ItemRarity.LEGENDARY);
-        setRarityForItem(Items.DRAGON_HEAD, ItemRarity.LEGENDARY);
-        setRarityForItem(Items.ELYTRA, ItemRarity.LEGENDARY);
-        setRarityForItem(Items.END_PORTAL_FRAME, ItemRarity.LEGENDARY);
-        setRarityForItem(Items.NETHER_STAR, ItemRarity.LEGENDARY);
+        storeAndSetRarity(Items.DRAGON_EGG, ItemRarity.LEGENDARY);
+        storeAndSetRarity(Items.DRAGON_HEAD, ItemRarity.LEGENDARY);
+        storeAndSetRarity(Items.ELYTRA, ItemRarity.LEGENDARY);
+        storeAndSetRarity(Items.END_PORTAL_FRAME, ItemRarity.LEGENDARY);
+        storeAndSetRarity(Items.NETHER_STAR, ItemRarity.LEGENDARY);
         
         // Mythic tier - very powerful or sought-after items
-        setRarityForItem(Items.BEACON, ItemRarity.MYTHIC);
-        setRarityForItem(Items.ENCHANTED_GOLDEN_APPLE, ItemRarity.MYTHIC);
-        setRarityForItem(Items.NETHERITE_BLOCK, ItemRarity.MYTHIC);
+        storeAndSetRarity(Items.BEACON, ItemRarity.MYTHIC);
+        storeAndSetRarity(Items.ENCHANTED_GOLDEN_APPLE, ItemRarity.MYTHIC);
+        storeAndSetRarity(Items.NETHERITE_BLOCK, ItemRarity.MYTHIC);
         
         // Special tier - unique items that are special but not necessarily legendary
-        setRarityForItem(Items.HEART_OF_THE_SEA, ItemRarity.SPECIAL);
-        setRarityForItem(Items.MUSIC_DISC_PIGSTEP, ItemRarity.SPECIAL); // Rarest music disc
-        setRarityForItem(Items.CONDUIT, ItemRarity.SPECIAL);
-        setRarityForItem(Items.TOTEM_OF_UNDYING, ItemRarity.SPECIAL);
+        storeAndSetRarity(Items.HEART_OF_THE_SEA, ItemRarity.SPECIAL);
+        storeAndSetRarity(Items.MUSIC_DISC_PIGSTEP, ItemRarity.SPECIAL); // Rarest music disc
+        storeAndSetRarity(Items.CONDUIT, ItemRarity.SPECIAL);
+        storeAndSetRarity(Items.TOTEM_OF_UNDYING, ItemRarity.SPECIAL);
         
         // Epic tier adjustments
-        setRarityForItem(Items.ANCIENT_DEBRIS, ItemRarity.EPIC);
-        setRarityForItem(Items.NETHERITE_INGOT, ItemRarity.EPIC);
-        setRarityForItem(Items.NETHERITE_SCRAP, ItemRarity.EPIC);
+        storeAndSetRarity(Items.ANCIENT_DEBRIS, ItemRarity.EPIC);
+        storeAndSetRarity(Items.NETHERITE_INGOT, ItemRarity.EPIC);
+        storeAndSetRarity(Items.NETHERITE_SCRAP, ItemRarity.EPIC);
         
         // Apply to all other music discs
         ForgeRegistries.ITEMS.getValues().stream()
             .filter(item -> item.getDescriptionId().contains("music_disc"))
             .filter(item -> item != Items.MUSIC_DISC_PIGSTEP) // Already set to SPECIAL
-            .forEach(item -> setRarityForItem(item, ItemRarity.RARE));
+            .forEach(item -> storeAndSetRarity(item, ItemRarity.RARE));
         
         LOGGER.info("Manual rarities configured for special items");
+    }
+    
+    /**
+     * Helper method to both store default rarity and set current rarity
+     */
+    private static void storeAndSetRarity(Item item, ItemRarity rarity) {
+        storeDefaultRarity(item, rarity);
+        setRarityForItem(item, rarity);
     }
     
     /**
@@ -503,8 +521,9 @@ public class RarityManager {
     public static void clearItemData(Item item) {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
         
-        // Get the default rarity before clearing
+        // Get the default rarity before clearing any data
         ItemRarity defaultRarity = getDefaultRarity(item);
+        LOGGER.info("Clearing data for {}, default rarity: {}", id, defaultRarity.getName());
         
         // Remove custom data
         ITEM_RARITIES.remove(id);
@@ -513,11 +532,10 @@ public class RarityManager {
         TOOLTIPS.remove(id);
         AUTO_RARITY_CACHE.remove(id);
         
-        // Restore default rarity (but don't save as custom)
-        if (defaultRarity != DEFAULT_RARITY) {
-            // Only restore non-common defaults
-            ITEM_RARITIES.put(id, defaultRarity);
-        }
+        // Restore default rarity (if not common)
+        // CRITICAL: For all items, restore the default rarity that was stored previously  
+        ITEM_RARITIES.put(id, defaultRarity);
+        LOGGER.info("Restored default rarity: {}", defaultRarity.getName());
         
         // Also delete the config file
         ConfigManager.deleteItemConfig(item);
@@ -873,16 +891,18 @@ public class RarityManager {
      */
     public static ItemRarity getDefaultRarity(Item item) {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
-        if (id == null) return DEFAULT_RARITY;
-        
-        // If we have a stored default, use that
-        if (DEFAULT_RARITIES.containsKey(id)) {
-            return DEFAULT_RARITIES.get(id);
+        if (id != null && DEFAULT_RARITIES.containsKey(id)) {
+            ItemRarity rarity = DEFAULT_RARITIES.get(id);
+            LOGGER.debug("Found stored default rarity for {}: {}", id, rarity.getName());
+            return rarity;
         }
         
-        // Otherwise calculate it
+        // If not stored, calculate it
         ItemRarity calculatedRarity = determineItemRarity(item);
-        DEFAULT_RARITIES.put(id, calculatedRarity); // Cache for next time
+        if (id != null) {
+            DEFAULT_RARITIES.put(id, calculatedRarity); // Store for future
+        }
+        LOGGER.debug("Calculated default rarity for {}: {}", id, calculatedRarity.getName());
         return calculatedRarity;
     }
 

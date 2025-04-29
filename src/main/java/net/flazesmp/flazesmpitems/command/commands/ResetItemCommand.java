@@ -13,6 +13,7 @@ import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
@@ -77,8 +78,10 @@ public class ResetItemCommand implements IModCommand {
         try {
             ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
             
-            // Determine the item's default rarity BEFORE clearing data
+            // Get the default rarity before clearing data
             ItemRarity defaultRarity = RarityManager.getDefaultRarity(item);
+            FlazeSMPItems.LOGGER.info("Reset item {} with default rarity: {}", 
+                itemId, defaultRarity.getName());
             
             // Clear all custom data for the item
             RarityManager.clearItemData(item);
@@ -98,7 +101,7 @@ public class ResetItemCommand implements IModCommand {
                 .withStyle(ChatFormatting.GRAY), false);
                 
             source.sendSuccess(() -> Component.literal(
-                MessageConfig.getMessage("command.reset.tooltip.rarity", defaultRarity.getName()))
+                MessageConfig.getMessage("command.reset.tooltip.rarity"))
                 .withStyle(ChatFormatting.GRAY), false);
                 
             source.sendSuccess(() -> Component.literal(
@@ -136,11 +139,16 @@ public class ResetItemCommand implements IModCommand {
             Item item = heldItem.getItem();
             ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
             
-            // Determine the item's default rarity BEFORE clearing data
+            // Get the default rarity BEFORE clearing data, and debug log it
             ItemRarity defaultRarity = RarityManager.getDefaultRarity(item);
+            FlazeSMPItems.LOGGER.debug("Item {} default rarity from getDefaultRarity: {}", 
+                itemId, defaultRarity.getName());
             
             // Clear all custom data for the item
             RarityManager.clearItemData(item);
+            
+            // IMPORTANT: Get the rarity AGAIN after clearing data since it's now been restored
+            ItemRarity restoredRarity = RarityManager.getRarity(item);
             
             // Tell the user what was reset
             source.sendSuccess(() -> Component.literal(
@@ -157,7 +165,7 @@ public class ResetItemCommand implements IModCommand {
                 .withStyle(ChatFormatting.GRAY), false);
                 
             source.sendSuccess(() -> Component.literal(
-                MessageConfig.getMessage("command.reset.tooltip.rarity", defaultRarity.getName()))
+                MessageConfig.getMessage("command.reset.tooltip.rarity"))
                 .withStyle(ChatFormatting.GRAY), false);
                 
             source.sendSuccess(() -> Component.literal(
