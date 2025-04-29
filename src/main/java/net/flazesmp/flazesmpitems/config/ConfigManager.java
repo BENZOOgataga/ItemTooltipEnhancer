@@ -337,15 +337,69 @@ public class ConfigManager {
         // Check main config directory
         Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
         if (!Files.exists(configDir)) {
-            LOGGER.warn("Config directory doesn't exist, will create: {}", configDir);
-            needsRepair = true;
+            LOGGER.info("Creating config directory: {}", configDir);
+            try {
+                Files.createDirectories(configDir);
+                
+                // Create example item config file
+                Path examplePath = configDir.resolve(EXAMPLE_FILE);
+                createExampleConfigFile(examplePath);
+                
+                needsRepair = true;
+            } catch (IOException e) {
+                LOGGER.error("Failed to create config directory: {}", e.getMessage());
+            }
         }
         
         // Check tooltip config file in Forge config directory
         Path tooltipConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-tooltips.toml");
         if (!Files.exists(tooltipConfigFile)) {
-            LOGGER.warn("Tooltip config file doesn't exist, will create: {}", tooltipConfigFile);
-            needsRepair = true;
+            LOGGER.info("Creating tooltip config file: {}", tooltipConfigFile);
+            try {
+                // Modification importante ici: structure correcte du fichier TOML
+                String tooltipConfig = 
+                    "#ItemTooltipEnhancer Tooltip Formatting Configuration\n" +
+                    "[general]\n" +
+                    "\t#Enable Hypixel Skyblock-style stat formatting\n" +
+                    "\tenableStatFormatting = false\n\n" +
+                    "[display]\n" +
+                    "\t#Show a header above the stats section\n" +
+                    "\tshowStatHeader = false\n" +
+                    "\t#Text to show as the stats header (supports & color codes)\n" +
+                    "\tstatHeaderText = \"&9&lSTATS\"\n\n" +
+                    "[statNames]\n" +
+                    "\tattack_damage = \"Damage\"\n" +
+                    "\tattack_damage_internal = \"attack damage\"\n" +
+                    "\tattack_speed = \"Attack Speed\"\n" +
+                    "\tattack_speed_internal = \"attack speed\"\n" +
+                    "\tarmor = \"Defense\"\n" +
+                    "\tarmor_internal = \"armor\"\n" +
+                    "\tarmor_toughness = \"Armor Toughness\"\n" +
+                    "\tarmor_toughness_internal = \"armor toughness\"\n" +
+                    "\tknockback_resistance = \"Knockback Resistance\"\n" +
+                    "\tknockback_resistance_internal = \"knockback resistance\"\n" +
+                    "\tmax_health = \"Health\"\n" +
+                    "\tmax_health_internal = \"max health\"\n" +
+                    "\tmovement_speed = \"Speed\"\n" +
+                    "\tmovement_speed_internal = \"movement speed\"\n" +
+                    "\tluck = \"Luck\"\n" +
+                    "\tluck_internal = \"luck\"\n" +
+                    "\treach_distance = \"Reach\"\n" +
+                    "\treach_distance_internal = \"reach distance\"\n" +
+                    "\tmining_speed = \"Mining Speed\"\n" +
+                    "\tmining_speed_internal = \"mining speed\"\n" +
+                    "\tmagic_damage = \"Magic Damage\"\n" +
+                    "\tmagic_damage_internal = \"magic damage\"\n" +
+                    "\tcrit_chance = \"Crit Chance\"\n" +
+                    "\tcrit_chance_internal = \"critical chance\"\n" +
+                    "\tcrit_damage = \"Crit Damage\"\n" +
+                    "\tcrit_damage_internal = \"critical damage\"";
+                
+                Files.writeString(tooltipConfigFile, tooltipConfig, StandardCharsets.UTF_8);
+                needsRepair = true;
+            } catch (IOException e) {
+                LOGGER.error("Failed to create tooltip config file: {}", e.getMessage());
+            }
         }
         
         // Check clearlag config file
@@ -364,84 +418,7 @@ public class ConfigManager {
 
         // If issues were found, repair the configuration
         if (needsRepair) {
-            LOGGER.info("Repairing configuration...");
-            try {
-                // Create the directory structure
-                Files.createDirectories(configDir);
-                LOGGER.info("Created config directory at {}", configDir);
-                
-                // Create player preferences directory
-                Files.createDirectories(playerPrefsDir);
-                LOGGER.info("Created player preferences directory at {}", playerPrefsDir);
-                
-                // Create example file if it doesn't exist
-                Path exampleFile = configDir.resolve(EXAMPLE_FILE);
-                if (!Files.exists(exampleFile)) {
-                    createExampleConfigFile(exampleFile);
-                    LOGGER.info("Created example config file at {}", exampleFile);
-                }
-                
-                // Create tooltip config if it doesn't exist
-                if (!Files.exists(tooltipConfigFile)) {
-                    String defaultContent = 
-                        "# ItemTooltipEnhancer Configuration File\n" +
-                        "# This file contains settings for tooltips and item display\n\n" +
-                        "[general]\n" +
-                        "# Enable or disable Hypixel-style item tooltips\n" +
-                        "enableHypixelStyle = true\n\n" +
-                        "[display]\n" +
-                        "# Enable or disable showing item rarities\n" +
-                        "showRarity = true\n\n" +
-                        "# Enable or disable showing item categories\n" +
-                        "showCategory = true\n\n" +
-                        "# Enable or disable showing custom names\n" +
-                        "showCustomName = true\n\n" +
-                        "[tooltips]\n" +
-                        "# Enable or disable stat formatting\n" +
-                        "enableStatFormatting = false\n\n" +
-                        "# Show header before stats\n" +
-                        "showStatHeader = false\n\n" +
-                        "# Text to show in the stat header\n" +
-                        "statHeaderText = \"&9&lSTATS\"\n";
-                    
-                    Files.writeString(tooltipConfigFile, defaultContent, StandardCharsets.UTF_8);
-                    LOGGER.info("Created default tooltip config file at {}", tooltipConfigFile);
-                }
-                
-                // Update only the clearlag config section
-                if (!Files.exists(clearlagConfigFile)) {
-                    String defaultContent = 
-                        "# ItemTooltipEnhancer ClearLag Configuration\n" +
-                        "# This file contains settings for the automatic and manual clearlag system\n\n" +
-                        "[general]\n" +
-                        "# Enable automatic clearlag\n" +
-                        "enableAutoClearlag = false\n\n" +
-                        "# Interval between automatic clearlag operations (in minutes)\n" +
-                        "clearlagIntervalMinutes = 60\n\n" +
-                        "[notifications]\n" +
-                        "# Notification times before clearlag (in seconds)\n" +
-                        "warningTimesSeconds = [1800, 900, 600, 300, 60, 30, 10, 5, 3, 2, 1]\n\n" +
-                        "# Default notification type for players (HOTBAR, CHAT, NONE)\n" +
-                        "defaultNotificationType = \"HOTBAR\"\n\n" +
-                        "# How long notifications should stay visible on the hotbar (in seconds)\n" +
-                        "notificationDisplayDurationSeconds = 3\n\n" +
-                        "# Whether to use dynamic countdown times based on the time remaining\n" +
-                        "useDynamicCountdown = true\n\n" +
-                        "# Threshold (in seconds) above which notifications will show minutes:seconds\n" +
-                        "longNotificationThresholdSeconds = 60\n\n" +
-                        "# Threshold (in seconds) below which notifications will show exact seconds\n" +
-                        "shortNotificationThresholdSeconds = 10\n\n" +
-                        "[entities]\n" +
-                        "# Entity types to clear during clearlag operation (reference: https://minecraft.wiki/w/Java_Edition_data_values#Entities)\n" +
-                        "entityTypesToClear = [\"minecraft:item\"]\n";
-                    
-                    Files.writeString(clearlagConfigFile, defaultContent, StandardCharsets.UTF_8);
-                    LOGGER.info("Created default clearlag config file at {}", clearlagConfigFile);
-                }
-                
-            } catch (IOException e) {
-                LOGGER.error("Failed to repair configuration", e);
-            }
+            LOGGER.info("Configuration repair completed");
         } else {
             LOGGER.info("Configuration integrity check passed");
         }
