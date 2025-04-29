@@ -337,48 +337,29 @@ public class ConfigManager {
         // Check main config directory
         Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
         if (!Files.exists(configDir)) {
-            LOGGER.warn("Config directory is missing! Will recreate.");
+            LOGGER.warn("Config directory doesn't exist, will create: {}", configDir);
             needsRepair = true;
         }
         
         // Check tooltip config file in Forge config directory
         Path tooltipConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-tooltips.toml");
         if (!Files.exists(tooltipConfigFile)) {
-            LOGGER.warn("Tooltip config file is missing! Will recreate.");
+            LOGGER.warn("Tooltip config file doesn't exist, will create: {}", tooltipConfigFile);
             needsRepair = true;
-            
-            // Recreate the tooltips.toml file directly
-            try {
-                // Create the file with default content
-                Files.createDirectories(tooltipConfigFile.getParent());
-                
-                // Default content for the tooltips.toml file
-                String defaultContent = 
-                    "# ItemTooltipEnhancer Configuration File\n" +
-                    "# This file contains settings for tooltips and item display\n\n" +
-                    "[general]\n" +
-                    "# Enable or disable Hypixel-style item tooltips\n" +
-                    "enableHypixelStyle = true\n\n" +
-                    "[display]\n" +
-                    "# Enable or disable showing item rarities\n" +
-                    "showRarity = true\n\n" +
-                    "# Enable or disable showing item categories\n" +
-                    "showCategory = true\n\n" +
-                    "# Enable or disable showing custom names\n" +
-                    "showCustomName = true\n\n" +
-                    "[tooltips]\n" +
-                    "# Enable or disable stat formatting\n" +
-                    "enableStatFormatting = true\n\n" +
-                    "# Show header before stats\n" +
-                    "showStatHeader = false\n\n" +
-                    "# Text to show in the stat header\n" +
-                    "statHeaderText = \"&9&lSTATS\"\n";
-                
-                Files.writeString(tooltipConfigFile, defaultContent, StandardCharsets.UTF_8);
-                LOGGER.info("Created default tooltip config file at {}", tooltipConfigFile);
-            } catch (IOException e) {
-                LOGGER.error("Failed to create tooltip config file", e);
-            }
+        }
+        
+        // Check clearlag config file
+        Path clearlagConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-clearlag.toml");
+        if (!Files.exists(clearlagConfigFile)) {
+            LOGGER.warn("Clearlag config file doesn't exist, will create: {}", clearlagConfigFile);
+            needsRepair = true;
+        }
+        
+        // Ensure player preferences directory exists
+        Path playerPrefsDir = configDir.resolve("playerpreferencesdata");
+        if (!Files.exists(playerPrefsDir)) {
+            LOGGER.warn("Player preferences directory doesn't exist, will create: {}", playerPrefsDir);
+            needsRepair = true;
         }
 
         // If issues were found, repair the configuration
@@ -389,6 +370,10 @@ public class ConfigManager {
                 Files.createDirectories(configDir);
                 LOGGER.info("Created config directory at {}", configDir);
                 
+                // Create player preferences directory
+                Files.createDirectories(playerPrefsDir);
+                LOGGER.info("Created player preferences directory at {}", playerPrefsDir);
+                
                 // Create example file if it doesn't exist
                 Path exampleFile = configDir.resolve(EXAMPLE_FILE);
                 if (!Files.exists(exampleFile)) {
@@ -396,15 +381,69 @@ public class ConfigManager {
                     LOGGER.info("Created example config file at {}", exampleFile);
                 }
                 
-                // Load configs after repair
-                loadAllConfigs();
+                // Create tooltip config if it doesn't exist
+                if (!Files.exists(tooltipConfigFile)) {
+                    String defaultContent = 
+                        "# ItemTooltipEnhancer Configuration File\n" +
+                        "# This file contains settings for tooltips and item display\n\n" +
+                        "[general]\n" +
+                        "# Enable or disable Hypixel-style item tooltips\n" +
+                        "enableHypixelStyle = true\n\n" +
+                        "[display]\n" +
+                        "# Enable or disable showing item rarities\n" +
+                        "showRarity = true\n\n" +
+                        "# Enable or disable showing item categories\n" +
+                        "showCategory = true\n\n" +
+                        "# Enable or disable showing custom names\n" +
+                        "showCustomName = true\n\n" +
+                        "[tooltips]\n" +
+                        "# Enable or disable stat formatting\n" +
+                        "enableStatFormatting = false\n\n" +
+                        "# Show header before stats\n" +
+                        "showStatHeader = false\n\n" +
+                        "# Text to show in the stat header\n" +
+                        "statHeaderText = \"&9&lSTATS\"\n";
+                    
+                    Files.writeString(tooltipConfigFile, defaultContent, StandardCharsets.UTF_8);
+                    LOGGER.info("Created default tooltip config file at {}", tooltipConfigFile);
+                }
                 
-                LOGGER.info("Configuration repair complete.");
+                // Update only the clearlag config section
+                if (!Files.exists(clearlagConfigFile)) {
+                    String defaultContent = 
+                        "# ItemTooltipEnhancer ClearLag Configuration\n" +
+                        "# This file contains settings for the automatic and manual clearlag system\n\n" +
+                        "[general]\n" +
+                        "# Enable automatic clearlag\n" +
+                        "enableAutoClearlag = false\n\n" +
+                        "# Interval between automatic clearlag operations (in minutes)\n" +
+                        "clearlagIntervalMinutes = 60\n\n" +
+                        "[notifications]\n" +
+                        "# Notification times before clearlag (in seconds)\n" +
+                        "warningTimesSeconds = [1800, 900, 600, 300, 60, 30, 10, 5, 3, 2, 1]\n\n" +
+                        "# Default notification type for players (HOTBAR, CHAT, NONE)\n" +
+                        "defaultNotificationType = \"HOTBAR\"\n\n" +
+                        "# How long notifications should stay visible on the hotbar (in seconds)\n" +
+                        "notificationDisplayDurationSeconds = 3\n\n" +
+                        "# Whether to use dynamic countdown times based on the time remaining\n" +
+                        "useDynamicCountdown = true\n\n" +
+                        "# Threshold (in seconds) above which notifications will show minutes:seconds\n" +
+                        "longNotificationThresholdSeconds = 60\n\n" +
+                        "# Threshold (in seconds) below which notifications will show exact seconds\n" +
+                        "shortNotificationThresholdSeconds = 10\n\n" +
+                        "[entities]\n" +
+                        "# Entity types to clear during clearlag operation (reference: https://minecraft.wiki/w/Java_Edition_data_values#Entities)\n" +
+                        "entityTypesToClear = [\"minecraft:item\"]\n";
+                    
+                    Files.writeString(clearlagConfigFile, defaultContent, StandardCharsets.UTF_8);
+                    LOGGER.info("Created default clearlag config file at {}", clearlagConfigFile);
+                }
+                
             } catch (IOException e) {
                 LOGGER.error("Failed to repair configuration", e);
             }
         } else {
-            LOGGER.info("Configuration integrity check passed.");
+            LOGGER.info("Configuration integrity check passed");
         }
     }
     

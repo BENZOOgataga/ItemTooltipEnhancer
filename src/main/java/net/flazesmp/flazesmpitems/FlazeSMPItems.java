@@ -1,5 +1,7 @@
 package net.flazesmp.flazesmpitems;
 
+import net.flazesmp.flazesmpitems.clearlag.ClearlagConfig;
+import net.flazesmp.flazesmpitems.clearlag.ClearlagManager;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.event.ItemDisplayNameHandler;
 import net.flazesmp.flazesmpitems.event.ItemTooltipEventHandler;
@@ -27,10 +29,10 @@ public class FlazeSMPItems {
         
         // Register configs first
         TooltipConfig.register();
+        ClearlagConfig.register(); // Register clearlag configuration
         
         // Initialize default mappings (without relying on config)
         StatTooltipFormatter.setupDefaultAttributeMappings();
-
         
         // Initialize the ConfigManager
         ConfigManager.initialize();
@@ -40,6 +42,10 @@ public class FlazeSMPItems {
         
         // Register to the mod event bus
         modEventBus.register(TooltipConfig.class);
+        modEventBus.register(ClearlagConfig.class); // Register clearlag config events
+        
+        // Register ClearlagManager for forge events
+        MinecraftForge.EVENT_BUS.register(ClearlagManager.class);
         
         // Register ourselves for server and other game events
         MinecraftForge.EVENT_BUS.register(this);
