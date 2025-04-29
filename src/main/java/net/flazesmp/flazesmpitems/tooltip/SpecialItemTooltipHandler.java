@@ -1,6 +1,7 @@
 package net.flazesmp.flazesmpitems.tooltip;
 
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -79,7 +80,7 @@ public class SpecialItemTooltipHandler {
         // If empty potion with just water, say so
         if (effects.isEmpty() && potion.getName("").equals("")) {
             tooltip.add(Component.literal("")); // Empty line
-            tooltip.add(Component.literal("No Effects")
+            tooltip.add(Component.literal(MessageConfig.getMessage("tooltip.potion.no_effects"))
                 .withStyle(ChatFormatting.GRAY));
             return;
         }
@@ -88,7 +89,7 @@ public class SpecialItemTooltipHandler {
         if (!effects.isEmpty()) {
             // Add the EFFECTS header
             tooltip.add(Component.literal("")); // Empty line before the effects section
-            tooltip.add(Component.literal("EFFECTS")
+            tooltip.add(Component.literal(MessageConfig.getMessage("tooltip.potion.effects_header"))
                 .withStyle(ChatFormatting.AQUA)
                 .withStyle(ChatFormatting.BOLD));
             
@@ -114,10 +115,8 @@ public class SpecialItemTooltipHandler {
                 
                 // Add duration on a separate line with indentation if effect has duration
                 if (effect.getDuration() > 20) { // More than 1 second
-                    tooltip.add(Component.literal("  Duration: ")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal(duration)
-                        .withStyle(ChatFormatting.WHITE)));
+                    tooltip.add(Component.literal(MessageConfig.getMessage("tooltip.potion.duration", duration))
+                        .withStyle(ChatFormatting.GRAY));
                 }
             }
         } else {
@@ -125,7 +124,7 @@ public class SpecialItemTooltipHandler {
             // (rare case, but could happen with some mods or custom potions)
             if (!potion.getName("").equals("")) {
                 tooltip.add(Component.literal("")); // Empty line
-                tooltip.add(Component.literal("Custom Potion")
+                tooltip.add(Component.literal(MessageConfig.getMessage("tooltip.potion.custom_potion"))
                     .withStyle(ChatFormatting.GRAY));
             }
         }
@@ -184,10 +183,19 @@ public class SpecialItemTooltipHandler {
         
         // Add formatted track info
         tooltip.add(Component.literal(""));
-        tooltip.add(Component.literal("Track: ")
-            .withStyle(ChatFormatting.GRAY)
-            .append(Component.literal(trackName)
-            .withStyle(ChatFormatting.BLUE)));
+        // Use raw component creation to preserve formatting codes in the message
+        Component trackComponent = Component.Serializer.fromJson(
+            "{\"text\":\"" + MessageConfig.getMessage("tooltip.music_disc.track", trackName) + "\"}"
+        );
+        if (trackComponent != null) {
+            tooltip.add(trackComponent);
+        } else {
+            // Fallback in case parsing fails
+            tooltip.add(Component.literal("Track: ")
+                .withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(trackName)
+                .withStyle(ChatFormatting.BLUE)));
+        }
     }
     
     /**
@@ -207,7 +215,7 @@ public class SpecialItemTooltipHandler {
         }
         
         // Last resort fallback
-        return "Unknown Track";
+        return MessageConfig.getMessage("tooltip.music_disc.unknown");
     }
     
     /**

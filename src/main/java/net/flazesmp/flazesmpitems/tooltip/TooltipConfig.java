@@ -55,16 +55,42 @@ public class TooltipConfig {
     
     // Client config
     public static class ClientConfig {
-        // Main toggle for the tooltip stat formatting feature
+        // Main config values
         public final ForgeConfigSpec.BooleanValue enableStatFormatting;
-        
-        // Display options
         public final ForgeConfigSpec.BooleanValue showStatHeader;
         public final ForgeConfigSpec.ConfigValue<String> statHeaderText;
         
-        // Stat display names mappings
-        private final Map<String, ForgeConfigSpec.ConfigValue<String>> statDisplayNames = new HashMap<>();
-        private final Map<String, ForgeConfigSpec.ConfigValue<String>> internalNames = new HashMap<>();
+        // Keep only the direct config values
+        public final ForgeConfigSpec.ConfigValue<String> attackDamageDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> attackDamageInternal;
+        public final ForgeConfigSpec.ConfigValue<String> attackSpeedDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> attackSpeedInternal;
+        public final ForgeConfigSpec.ConfigValue<String> armorDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> armorInternal;
+        public final ForgeConfigSpec.ConfigValue<String> armorToughnessDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> armorToughnessInternal;
+        public final ForgeConfigSpec.ConfigValue<String> knockbackResistanceDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> knockbackResistanceInternal;
+        public final ForgeConfigSpec.ConfigValue<String> maxHealthDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> maxHealthInternal;
+        public final ForgeConfigSpec.ConfigValue<String> movementSpeedDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> movementSpeedInternal;
+        public final ForgeConfigSpec.ConfigValue<String> luckDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> luckInternal;
+        public final ForgeConfigSpec.ConfigValue<String> reachDistanceDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> reachDistanceInternal;
+        public final ForgeConfigSpec.ConfigValue<String> miningSpeedDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> miningSpeedInternal;
+        public final ForgeConfigSpec.ConfigValue<String> magicDamageDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> magicDamageInternal;
+        public final ForgeConfigSpec.ConfigValue<String> critChanceDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> critChanceInternal;
+        public final ForgeConfigSpec.ConfigValue<String> critDamageDisplay;
+        public final ForgeConfigSpec.ConfigValue<String> critDamageInternal;
+        
+        // IMPORTANT: These maps must be transient and static to avoid serialization issues
+        private static final transient Map<String, String> statDisplayNamesMap = new HashMap<>();
+        private static final transient Map<String, String> internalNamesMap = new HashMap<>();
         
         public ClientConfig(ForgeConfigSpec.Builder builder) {
             builder.comment("ItemTooltipEnhancer Tooltip Formatting Configuration")
@@ -86,42 +112,48 @@ public class TooltipConfig {
             
             builder.pop().push("statNames");
             
-            // Add configurable attribute display names
-            addStatDisplayName(builder, "attack_damage", "Damage", "attack damage");
-            addStatDisplayName(builder, "attack_speed", "Attack Speed", "attack speed");
-            addStatDisplayName(builder, "armor", "Defense", "armor");
-            addStatDisplayName(builder, "armor_toughness", "Armor Toughness", "armor toughness");
-            addStatDisplayName(builder, "knockback_resistance", "Knockback Resistance", "knockback resistance");
-            addStatDisplayName(builder, "max_health", "Health", "max health");
-            addStatDisplayName(builder, "movement_speed", "Speed", "movement speed");
-            addStatDisplayName(builder, "luck", "Luck", "luck");
+            // IMPORTANT: Only store the config objects in the constructor, 
+            // DON'T call .get() on them here!
+            attackDamageDisplay = builder.define("attack_damage", "Damage");
+            attackDamageInternal = builder.define("attack_damage_internal", "attack damage");
             
-            // Add common modded attributes
-            addStatDisplayName(builder, "reach_distance", "Reach", "reach distance");
-            addStatDisplayName(builder, "mining_speed", "Mining Speed", "mining speed");
-            addStatDisplayName(builder, "magic_damage", "Magic Damage", "magic damage");
-            addStatDisplayName(builder, "crit_chance", "Crit Chance", "critical chance");
-            addStatDisplayName(builder, "crit_damage", "Crit Damage", "critical damage");
+            attackSpeedDisplay = builder.define("attack_speed", "Attack Speed");
+            attackSpeedInternal = builder.define("attack_speed_internal", "attack speed");
+            
+            armorDisplay = builder.define("armor", "Defense");
+            armorInternal = builder.define("armor_internal", "armor");
+            
+            armorToughnessDisplay = builder.define("armor_toughness", "Armor Toughness");
+            armorToughnessInternal = builder.define("armor_toughness_internal", "armor toughness");
+            
+            knockbackResistanceDisplay = builder.define("knockback_resistance", "Knockback Resistance");
+            knockbackResistanceInternal = builder.define("knockback_resistance_internal", "knockback resistance");
+            
+            maxHealthDisplay = builder.define("max_health", "Health");
+            maxHealthInternal = builder.define("max_health_internal", "max health");
+            
+            movementSpeedDisplay = builder.define("movement_speed", "Speed");
+            movementSpeedInternal = builder.define("movement_speed_internal", "movement speed");
+            
+            luckDisplay = builder.define("luck", "Luck");
+            luckInternal = builder.define("luck_internal", "luck");
+            
+            reachDistanceDisplay = builder.define("reach_distance", "Reach");
+            reachDistanceInternal = builder.define("reach_distance_internal", "reach distance");
+            
+            miningSpeedDisplay = builder.define("mining_speed", "Mining Speed");
+            miningSpeedInternal = builder.define("mining_speed_internal", "mining speed");
+            
+            magicDamageDisplay = builder.define("magic_damage", "Magic Damage");
+            magicDamageInternal = builder.define("magic_damage_internal", "magic damage");
+            
+            critChanceDisplay = builder.define("crit_chance", "Crit Chance");
+            critChanceInternal = builder.define("crit_chance_internal", "critical chance");
+            
+            critDamageDisplay = builder.define("crit_damage", "Crit Damage");
+            critDamageInternal = builder.define("crit_damage_internal", "critical damage");
             
             builder.pop();
-        }
-        
-        private void addStatDisplayName(ForgeConfigSpec.Builder builder, 
-                                      String configKey, 
-                                      String defaultDisplayName,
-                                      String defaultInternalName) {
-            // Define the display name for the stat
-            ForgeConfigSpec.ConfigValue<String> displayNameConfig = builder
-                    .comment("Display name for " + configKey + " stat")
-                    .define(configKey, defaultDisplayName);
-            
-            // Define the internal name that we'll look for in tooltips
-            ForgeConfigSpec.ConfigValue<String> internalNameConfig = builder
-                    .comment("Internal name for " + configKey + " stat (what appears in tooltips)")
-                    .define(configKey + "_internal", defaultInternalName);
-                    
-            statDisplayNames.put(configKey, displayNameConfig);
-            internalNames.put(configKey, internalNameConfig);
         }
         
         /**
@@ -133,21 +165,47 @@ public class TooltipConfig {
             StatTooltipFormatter.setupDefaultAttributeMappings();
             
             try {
-                // Then override with config values
-                for (Map.Entry<String, ForgeConfigSpec.ConfigValue<String>> entry : statDisplayNames.entrySet()) {
+                // Only populate the maps AFTER configs are loaded, in this method
+                statDisplayNamesMap.clear();
+                internalNamesMap.clear();
+                
+                // Now it's safe to call .get()
+                statDisplayNamesMap.put("attack_damage", attackDamageDisplay.get());
+                internalNamesMap.put("attack_damage", attackDamageInternal.get());
+                statDisplayNamesMap.put("attack_speed", attackSpeedDisplay.get());
+                internalNamesMap.put("attack_speed", attackSpeedInternal.get());
+                statDisplayNamesMap.put("armor", armorDisplay.get());
+                internalNamesMap.put("armor", armorInternal.get());
+                statDisplayNamesMap.put("armor_toughness", armorToughnessDisplay.get());
+                internalNamesMap.put("armor_toughness", armorToughnessInternal.get());
+                statDisplayNamesMap.put("knockback_resistance", knockbackResistanceDisplay.get());
+                internalNamesMap.put("knockback_resistance", knockbackResistanceInternal.get());
+                statDisplayNamesMap.put("max_health", maxHealthDisplay.get());
+                internalNamesMap.put("max_health", maxHealthInternal.get());
+                statDisplayNamesMap.put("movement_speed", movementSpeedDisplay.get());
+                internalNamesMap.put("movement_speed", movementSpeedInternal.get());
+                statDisplayNamesMap.put("luck", luckDisplay.get());
+                internalNamesMap.put("luck", luckInternal.get());
+                statDisplayNamesMap.put("reach_distance", reachDistanceDisplay.get());
+                internalNamesMap.put("reach_distance", reachDistanceInternal.get());
+                statDisplayNamesMap.put("mining_speed", miningSpeedDisplay.get());
+                internalNamesMap.put("mining_speed", miningSpeedInternal.get());
+                statDisplayNamesMap.put("magic_damage", magicDamageDisplay.get());
+                internalNamesMap.put("magic_damage", magicDamageInternal.get());
+                statDisplayNamesMap.put("crit_chance", critChanceDisplay.get());
+                internalNamesMap.put("crit_chance", critChanceInternal.get());
+                statDisplayNamesMap.put("crit_damage", critDamageDisplay.get());
+                internalNamesMap.put("crit_damage", critDamageInternal.get());
+                
+                // Then use these maps for your logic
+                for (Map.Entry<String, String> entry : statDisplayNamesMap.entrySet()) {
                     String attributeKey = entry.getKey();
-                    String displayName = entry.getValue().get();
+                    String displayName = entry.getValue();
+                    String internalName = internalNamesMap.get(attributeKey);
                     
-                    // Safely get the internal name
-                    ForgeConfigSpec.ConfigValue<String> internalNameConfig = internalNames.get(attributeKey);
-                    if (internalNameConfig != null) {
-                        String internalName = internalNameConfig.get();
-                        
-                        if (internalName != null && !internalName.isEmpty() && 
-                            displayName != null && !displayName.isEmpty()) {
-                            StatTooltipFormatter.registerAttributeDisplayName(internalName, displayName);
-                            FlazeSMPItems.LOGGER.debug("Registered stat mapping: {} -> {}", internalName, displayName);
-                        }
+                    if (internalName != null && !internalName.isEmpty() && 
+                        displayName != null && !displayName.isEmpty()) {
+                        StatTooltipFormatter.registerAttributeDisplayName(internalName, displayName);
                     }
                 }
             } catch (Exception e) {

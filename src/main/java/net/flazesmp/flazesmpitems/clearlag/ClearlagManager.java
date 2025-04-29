@@ -1,6 +1,7 @@
 package net.flazesmp.flazesmpitems.clearlag;
 
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
@@ -42,6 +43,23 @@ public class ClearlagManager {
     
     // Countdown from the last manual clearlag command (to prevent spam)
     private static final int CLEARLAG_COOLDOWN_SECONDS = 5;
+    
+    /**
+     * Display a message on the player's hotbar
+     * 
+     * @param player The player to display the message to
+     * @param message The message to display
+     * @param durationSeconds How long to display the message (in seconds)
+     */
+    private static void displayHotbarMessage(ServerPlayer player, String message, int durationSeconds) {
+        if (player == null) return;
+        
+        // Display the message on the hotbar (above the inventory)
+        player.displayClientMessage(Component.literal(message).withStyle(ChatFormatting.YELLOW), true);
+        
+        // Note: Minecraft doesn't provide a way to directly control how long the message displays.
+        // The 'true' parameter makes it display on the actionbar, which typically stays for a few seconds.
+    }
     
     /**
      * Schedule the next automatic clearlag
@@ -132,14 +150,15 @@ public class ClearlagManager {
                     
                     // Send initial message about next clearlag
                     String timeRemaining = ClearlagConfig.formatTimeRemaining(remainingSeconds);
+                    String message = MessageConfig.getMessage("clearlag.notification", timeRemaining);
                     
                     // Send based on their preference
                     NotificationType type = ClearlagConfig.getPlayerNotificationType(player.getUUID());
                     if (type == NotificationType.CHAT) {
-                        player.sendSystemMessage(Component.literal("Next automatic clearlag in " + timeRemaining)
+                        player.sendSystemMessage(Component.literal(message)
                                 .withStyle(ChatFormatting.YELLOW));
                     } else if (type == NotificationType.HOTBAR) {
-                        displayHotbarMessage(player, "Next clearlag in " + timeRemaining, 
+                        displayHotbarMessage(player, message, 
                                 ClearlagConfig.SERVER.notificationDisplayDurationSeconds.get());
                     }
                 }
@@ -151,13 +170,14 @@ public class ClearlagManager {
                 if (remainingMs > 0) {
                     int remainingSeconds = (int)(remainingMs / 1000);
                     String timeRemaining = ClearlagConfig.formatTimeRemaining(remainingSeconds);
+                    String message = MessageConfig.getMessage("clearlag.manual_notification", timeRemaining);
                     
                     NotificationType type = ClearlagConfig.getPlayerNotificationType(player.getUUID());
                     if (type == NotificationType.CHAT) {
-                        player.sendSystemMessage(Component.literal("Manual clearlag scheduled in " + timeRemaining)
+                        player.sendSystemMessage(Component.literal(message)
                                 .withStyle(ChatFormatting.YELLOW));
                     } else if (type == NotificationType.HOTBAR) {
-                        displayHotbarMessage(player, "Manual clearlag in " + timeRemaining,
+                        displayHotbarMessage(player, message,
                                 ClearlagConfig.SERVER.notificationDisplayDurationSeconds.get());
                     }
                 }
@@ -223,9 +243,12 @@ public class ClearlagManager {
         if (playerList == null) return;
         
         String formattedTime = ClearlagConfig.formatTimeRemaining(actualSeconds);
-        String message = "Items will be cleared in " + formattedTime;
+        String message;
+        
         if (isManual) {
-            message = "Manual clearlag: " + message;
+            message = MessageConfig.getMessage("clearlag.manual_warning", formattedTime);
+        } else {
+            message = MessageConfig.getMessage("clearlag.warning", formattedTime);
         }
         
         // Send message to each player based on their preference
@@ -234,11 +257,13 @@ public class ClearlagManager {
             
             switch (type) {
                 case CHAT:
-                    player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.YELLOW));
+                    player.sendSystemMessage(Component.literal(message)
+                        .withStyle(ChatFormatting.YELLOW));
                     break;
                 case HOTBAR:
                     // Use the display duration from config
-                    displayHotbarMessage(player, message, ClearlagConfig.SERVER.notificationDisplayDurationSeconds.get());
+                    displayHotbarMessage(player, message, 
+                        ClearlagConfig.SERVER.notificationDisplayDurationSeconds.get());
                     break;
                 case NONE:
                     // Do nothing
@@ -251,20 +276,7 @@ public class ClearlagManager {
     }
     
     /**
-     * Send a hotbar message to a player
-     * 
-     * @param player The player to send the message to
-     * @param message The message to display
-     * @param durationSeconds How long the message should stay visible
-     */
-    public static void displayHotbarMessage(ServerPlayer player, String message, int durationSeconds) {
-        player.displayClientMessage(Component.literal(message).withStyle(ChatFormatting.YELLOW), true);
-    }
-    
-    /**
      * Execute the clearlag operation
-     * 
-     * @param server The Minecraft server instance
      */
     public static void executeClearlag(MinecraftServer server) {
         if (server == null) return;
@@ -298,7 +310,8 @@ public class ClearlagManager {
         }
         
         // Create notification message
-        String message = "Cleared " + totalCleared + " item" + (totalCleared == 1 ? "" : "s");
+        String suffix = totalCleared == 1 ? "" : "s";
+        String message = MessageConfig.getMessage("clearlag.cleared", totalCleared, suffix);
         
         // Notify all players
         sendCompletionMessage(server.getPlayerList(), message);
@@ -372,7 +385,7 @@ public class ClearlagManager {
             // Announce that a manual clearlag has been scheduled
             PlayerList playerList = server.getPlayerList();
             String timeRemaining = ClearlagConfig.formatTimeRemaining(MANUAL_CLEARLAG_DELAY_SECONDS);
-            String message = "Manual clearlag scheduled in " + timeRemaining;
+            String message = MessageConfig.getMessage("clearlag.scheduled");
             sendNotificationToAllPlayers(playerList, Component.literal(message), false);
         }
     }

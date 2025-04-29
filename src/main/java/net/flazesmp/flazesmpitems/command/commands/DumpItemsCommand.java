@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
@@ -54,7 +55,8 @@ public class DumpItemsCommand implements IModCommand {
         CommandSourceStack source = context.getSource();
         
         try {
-            source.sendSuccess(() -> Component.literal("Collecting item information...")
+            source.sendSuccess(() -> Component.literal(
+                    MessageConfig.getMessage("command.dump.collecting"))
                     .withStyle(ChatFormatting.YELLOW), true);
             
             // Ensure dumps directory exists
@@ -151,7 +153,8 @@ public class DumpItemsCommand implements IModCommand {
             }
             
             // Provide feedback
-            source.sendSuccess(() -> Component.literal("Successfully dumped " + processedItemsArray[0] + " items to file:")
+            source.sendSuccess(() -> Component.literal(
+                    MessageConfig.getMessage("command.dump.success", processedItemsArray[0]))
                     .withStyle(ChatFormatting.GREEN), true);
             source.sendSuccess(() -> Component.literal(filePath.toString())
                     .withStyle(ChatFormatting.YELLOW), false);
@@ -159,12 +162,14 @@ public class DumpItemsCommand implements IModCommand {
             return 1;
         } catch (IOException e) {
             LOGGER.error("Failed to dump items to file", e);
-            source.sendFailure(Component.literal("Failed to dump items: " + e.getMessage())
+            source.sendFailure(Component.literal(
+                    MessageConfig.getMessage("command.dump.error", e.getMessage()))
                     .withStyle(ChatFormatting.RED));
             return 0;
         } catch (Exception e) {
             LOGGER.error("Unexpected error during item dump", e);
-            source.sendFailure(Component.literal("An unexpected error occurred: " + e.getMessage())
+            source.sendFailure(Component.literal(
+                    MessageConfig.getMessage("command.dump.error", e.getMessage()))
                     .withStyle(ChatFormatting.RED));
             return 0;
         }

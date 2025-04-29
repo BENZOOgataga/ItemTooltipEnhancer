@@ -11,6 +11,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -189,6 +190,83 @@ public class ClearlagCommand {
             .append(Component.literal(" to see entity types.").withStyle(ChatFormatting.GRAY)), false);
         
         return Command.SINGLE_SUCCESS;
+    }
+    
+    /**
+     * Execute showing the current notification type for the player
+     */
+    private static int executeShowNotificationType(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        
+        try {
+            ServerPlayer player = source.getPlayerOrException();
+            NotificationType currentType = ClearlagConfig.getPlayerNotificationType(player.getUUID());
+            
+            player.sendSystemMessage(Component.literal(
+                    MessageConfig.getMessage("clearlag.notification.type.current", currentType.name()))
+                .withStyle(ChatFormatting.YELLOW));
+                
+            player.sendSystemMessage(Component.literal(
+                    MessageConfig.getMessage("clearlag.notification.type.change"))
+                .withStyle(ChatFormatting.GRAY));
+                
+            return Command.SINGLE_SUCCESS;
+        } catch (CommandSyntaxException e) {
+            source.sendFailure(Component.literal(
+                    MessageConfig.getMessage("clearlag.notification.type.player_only")));
+            return 0;
+        }
+    }
+    
+    /**
+     * Execute setting notification type
+     */
+    private static int executeSetNotificationType(
+            CommandContext<CommandSourceStack> context, String typeStr) {
+        try {
+            ServerPlayer player = context.getSource().getPlayerOrException();
+            
+            NotificationType newType;
+            try {
+                // Convert to uppercase to match enum
+                newType = NotificationType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Handle invalid notification type
+                player.sendSystemMessage(Component.literal(
+                        MessageConfig.getMessage("clearlag.notification.type.invalid", typeStr))
+                    .withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal(
+                        MessageConfig.getMessage("clearlag.notification.type.valid"))
+                    .withStyle(ChatFormatting.YELLOW));
+                return 0;
+            }
+            
+            // Check if none type was selected and warn about risks
+            if (newType == NotificationType.NONE) {
+                player.sendSystemMessage(Component.literal(
+                        MessageConfig.getMessage("clearlag.notification.type.none_warning"))
+                    .withStyle(ChatFormatting.RED));
+            }
+            
+            // Update the player's preference
+            ClearlagConfig.setPlayerNotificationType(player.getUUID(), newType);
+            
+            // Inform the player of the change
+            String messageKey = switch(newType) {
+                case CHAT -> "clearlag.notification.type.chat";
+                case HOTBAR -> "clearlag.notification.type.hotbar";
+                case NONE -> "clearlag.notification.type.none";
+            };
+            
+            player.sendSystemMessage(Component.literal(
+                    MessageConfig.getMessage(messageKey))
+                .withStyle(ChatFormatting.GREEN));
+            return Command.SINGLE_SUCCESS;
+        } catch (CommandSyntaxException e) {
+            context.getSource().sendFailure(Component.literal(
+                    MessageConfig.getMessage("clearlag.notification.type.player_only")));
+            return 0;
+        }
     }
     
     /**
@@ -496,7 +574,8 @@ public class ClearlagCommand {
         
         // Check if a manual clearlag is already in progress
         if (!ClearlagManager.canExecuteManualClearlag()) {
-            source.sendFailure(Component.literal("A manual clearlag operation is already scheduled!")
+            source.sendFailure(Component.literal(
+                    MessageConfig.getMessage("clearlag.already_scheduled"))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -504,87 +583,11 @@ public class ClearlagCommand {
         // Start a manual clearlag
         ClearlagManager.startManualClearlag();
         
-        source.sendSuccess(() -> Component.literal("Manual clearlag scheduled to occur in 1 minute.")
+        source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("clearlag.scheduled"))
             .withStyle(ChatFormatting.YELLOW), true);
         
         return Command.SINGLE_SUCCESS;
-    }
-    
-    /**
-     * Execute setting notification type
-     */
-    private static int executeSetNotificationType(
-            CommandContext<CommandSourceStack> context, String typeStr) {
-        try {
-            ServerPlayer player = context.getSource().getPlayerOrException();
-            
-            NotificationType newType;
-            try {
-                // Convert to uppercase to match enum
-                newType = NotificationType.valueOf(typeStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Handle invalid notification type
-                player.sendSystemMessage(Component.literal("Invalid notification type: " + typeStr)
-                    .withStyle(ChatFormatting.RED));
-                player.sendSystemMessage(Component.literal("Valid types: hotbar, chat, none")
-                    .withStyle(ChatFormatting.YELLOW));
-                return 0;
-            }
-            
-            // Check if none type was selected and warn about risks
-            if (newType == NotificationType.NONE) {
-                player.sendSystemMessage(Component.literal("WARNING: You will not receive any clearlag notifications!")
-                    .withStyle(ChatFormatting.RED));
-            }
-            
-            // Update the player's preference
-            ClearlagConfig.setPlayerNotificationType(player.getUUID(), newType);
-            
-            // Inform the player of the change
-            String message = switch(newType) {
-                case CHAT -> "Clearlag notifications will now appear in chat";
-                case HOTBAR -> "Clearlag notifications will now appear on your hotbar";
-                case NONE -> "Clearlag notifications have been disabled (risky!)";
-            };
-            
-            player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.GREEN));
-            return Command.SINGLE_SUCCESS;
-            
-        } catch (CommandSyntaxException e) {
-            context.getSource().sendFailure(Component.literal("This command must be used by a player"));
-            return 0;
-        }
-    }
-    
-    /**
-     * Execute showing current notification type
-     */
-    private static int executeShowNotificationType(CommandContext<CommandSourceStack> context) {
-        try {
-            ServerPlayer player = context.getSource().getPlayerOrException();
-            NotificationType currentType = ClearlagConfig.getPlayerNotificationType(player.getUUID());
-            
-            String message = "Your current clearlag notification type: ";
-            String typeName = switch(currentType) {
-                case CHAT -> "chat";
-                case HOTBAR -> "hotbar";
-                case NONE -> "none (risky!)";
-            };
-            
-            player.sendSystemMessage(Component.literal(message)
-                .withStyle(ChatFormatting.YELLOW)
-                .append(Component.literal(typeName)
-                .withStyle(ChatFormatting.GREEN)));
-            
-            player.sendSystemMessage(Component.literal("You can change it with: /clearlag notifications <type>")
-                .withStyle(ChatFormatting.GRAY));
-            
-            return Command.SINGLE_SUCCESS;
-            
-        } catch (CommandSyntaxException e) {
-            context.getSource().sendFailure(Component.literal("This command must be used by a player"));
-            return 0;
-        }
     }
     
     /**
@@ -597,11 +600,13 @@ public class ClearlagCommand {
         int secondsRemaining = ClearlagManager.getTimeUntilNextClearlag();
         
         if (secondsRemaining <= 0) {
-            source.sendSuccess(() -> Component.literal("There is no clearlag currently scheduled.")
+            source.sendSuccess(() -> Component.literal(
+                    MessageConfig.getMessage("clearlag.none_scheduled"))
                 .withStyle(ChatFormatting.YELLOW), false);
         } else {
             String timeRemaining = ClearlagConfig.formatTimeRemaining(secondsRemaining);
-            source.sendSuccess(() -> Component.literal("Next clearlag will occur in " + timeRemaining)
+            source.sendSuccess(() -> Component.literal(
+                    MessageConfig.getMessage("clearlag.next", timeRemaining))
                 .withStyle(ChatFormatting.YELLOW), false);
         }
         

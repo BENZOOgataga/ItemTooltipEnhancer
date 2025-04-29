@@ -1,0 +1,74 @@
+# ItemTooltipEnhancer Message Configuration
+# You can customize all player-facing messages in the mod here.
+#
+# Format:
+# - Use & for color codes (e.g. &a for green)
+# - Use {0}, {1}, etc. for parameters that will be replaced dynamically
+# - If a message is missing, the mod will use the default hardcoded message
+
+[messages]
+    # Command messages
+    "command.reset.held_item_requirement" = "You must hold an item in your main hand"
+    "command.reset.success" = "Reset item: &e{0}"
+    "command.reset.success.held" = "Reset item in hand: &e{0}"
+    "command.reset.error" = "Error resetting item: &c{0}"
+    "command.reset.not_found" = "Item not found: &c{0}"
+    "command.reset.invalid_id" = "Invalid item ID format: &c{0}"
+    
+    # Clearlag messages
+    "clearlag.scheduled" = "&eManual clearlag scheduled to occur in 1 minute."
+    "clearlag.already_scheduled" = "&cA manual clearlag operation is already scheduled!"
+    "clearlag.none_scheduled" = "&eThere is no clearlag currently scheduled."
+    "clearlag.next" = "&eNext clearlag will occur in {0}"
+    "clearlag.warning" = "Items will be cleared in {0}"
+    "clearlag.manual_warning" = "Manual clearlag: Items will be cleared in {0}"
+    "clearlag.cleared" = "Cleared {0} item{1}"
+    "clearlag.notification" = "Next clearlag in {0}"
+    "clearlag.manual_notification" = "Manual clearlag in {0}"
+    
+    # Item command messages
+    "command.name.success" = "&aUpdated display name for {0} to: {1}"
+    "command.name.error" = "Error setting display name: &c{0}"
+    "command.tooltip.success" = "&aUpdated tooltip line {0} for {1} to: {2}"
+    "command.tooltip.error" = "Error setting tooltip: &c{0}"
+    "command.rarity.success" = "Updated rarity for {0} to: {1}"
+    "command.rarity.error" = "Error setting rarity: &c{0}"
+    "command.dump.collecting" = "&eCollecting item information..."
+    "command.dump.success" = "&aSuccessfully dumped {0} items to file:"
+    "command.dump.error" = "&cFailed to dump items: {0}"
+    "command.reload.checking" = "&eChecking and repairing config files if needed..."
+    "command.reload.success" = "&aConfiguration reloaded successfully!"
+    "command.reload.error" = "&cFailed to reload configuration: {0}"
+    
+    # Clearlag notification messages
+    "clearlag.notification.type.current" = "&eYour current clearlag notification type: &a{0}"
+    "clearlag.notification.type.change" = "&7You can change it with: /clearlag notifications <type>"
+    "clearlag.notification.type.invalid" = "&cInvalid notification type: {0}"
+    "clearlag.notification.type.valid" = "&eValid types: hotbar, chat, none"
+    "clearlag.notification.type.none_warning" = "&cWARNING: You will not receive any clearlag notifications!"
+    "clearlag.notification.type.chat" = "&aClearlag notifications will now appear in chat"
+    "clearlag.notification.type.hotbar" = "&aClearlag notifications will now appear on your hotbar"
+    "clearlag.notification.type.none" = "&aClearlag notifications have been disabled (risky!)"
+    "clearlag.notification.type.player_only" = "This command must be used by a player"
+    
+    # Config messages
+    "config.set.success" = "Set {0} to {1}"
+    "config.unknown_setting" = "Unknown setting: &c{0}"
+    "config.invalid_value" = "Invalid {0}: &c{1}"
+    "config.add.warning_time.exists" = "Warning time {0} seconds is already in the list"
+    "config.add.warning_time.success" = "&aAdded warning time: {0} seconds"
+    "config.remove.warning_time.not_found" = "&cWarning time {0} seconds is not in the list"
+    "config.remove.warning_time.last" = "&cCannot remove the last warning time"
+    "config.remove.warning_time.success" = "&cRemoved warning time: {0} seconds"
+    "config.add.entity_type.success" = "&aAdded entity type: {0}"
+    "config.remove.entity_type.not_found" = "&cEntity type {0} is not in the list"
+    "config.remove.entity_type.last" = "&cCannot remove the last entity type"
+    "config.remove.entity_type.success" = "&cRemoved entity type: {0}"
+    
+    # Special item tooltips
+    "tooltip.potion.no_effects" = "No Effects"
+    "tooltip.potion.effects_header" = "&bEFFECTS"
+    "tooltip.potion.duration" = "  Duration: &f{0}"
+    "tooltip.potion.custom_potion" = "Custom Potion"
+    "tooltip.music_disc.track" = "&7Track: &9{0}"
+    "tooltip.music_disc.unknown" = "Unknown Track"
