@@ -4,7 +4,6 @@
 # Format:
 # - Use & for color codes (e.g. &a for green)
 # - Use {0}, {1}, etc. for parameters that will be replaced dynamically
-# - If a message is missing, the mod will use the default hardcoded message
 
 [messages]
     # Command messages
@@ -14,6 +13,51 @@
     "command.reset.error" = "Error resetting item: &c{0}"
     "command.reset.not_found" = "Item not found: &c{0}"
     "command.reset.invalid_id" = "Invalid item ID format: &c{0}"
+    
+    # Help command messages
+    "command.help.header" = "=== ItemTooltipEnhancer Commands ==="
+    "command.help.editdisplayname" = "/ite editdisplayname <item> <name> - Set custom display name"
+    "command.help.edittooltip" = "/ite edittooltip <item> <line> <text> - Set tooltip line"
+    "command.help.editrarity" = "/ite editrarity <item> <rarity> - Set item rarity" 
+    "command.help.reset" = "/ite reset [item] - Reset item to default state"
+    "command.help.gettexture" = "/ite gettexture [item] - Get texture path for an item"
+    "command.help.dumpitems" = "/ite dumpitems - Dump all items to a text file"
+    "command.help.reload" = "/ite reload - Reload item configs from files"
+    "command.help.help" = "/ite help - Show this help message"
+    
+    # Reset command tooltip messages
+    "command.reset.tooltip.displayname" = "• Display name reset to default"
+    "command.reset.tooltip.tooltips" = "• Custom tooltips removed"
+    "command.reset.tooltip.rarity" = "• Rarity reset to {0}"
+    "command.reset.tooltip.config" = "• Config file deleted"
+    
+    # Item command messages
+    "command.name.success" = "&aUpdated display name for {0} to: {1}"
+    "command.name.error" = "Error setting display name: &c{0}"
+    "command.tooltip.success" = "&aUpdated tooltip line {0} for {1} to: {2}"
+    "command.tooltip.error" = "Error setting tooltip: &c{0}"
+    
+    # Rarity command messages
+    "command.rarity.success" = "Updated rarity for {0} to: {1}"
+    "command.rarity.error" = "Error setting rarity: &c{0}"
+    "command.rarity.invalid" = "Invalid rarity: {0}"
+    "command.rarity.valid_values" = "Valid rarities: {0}"
+    
+    # GetTexture command messages
+    "command.gettexture.item" = "Item: "
+    "command.gettexture.path" = "Texture Path: "
+    "command.gettexture.copy" = "[Click to Copy]"
+    "command.gettexture.copy_tooltip" = "Copy texture path to clipboard"
+    
+    # Dump command messages
+    "command.dump.collecting" = "&eCollecting item information..."
+    "command.dump.success" = "&aSuccessfully dumped {0} items to file:"
+    "command.dump.error" = "&cFailed to dump items: {0}"
+    
+    # Reload command messages
+    "command.reload.checking" = "&eChecking and repairing config files if needed..."
+    "command.reload.success" = "&aConfiguration reloaded successfully!"
+    "command.reload.error" = "&cFailed to reload configuration: {0}"
     
     # Clearlag messages
     "clearlag.scheduled" = "&eManual clearlag scheduled to occur in 1 minute."
@@ -26,20 +70,6 @@
     "clearlag.notification" = "Next clearlag in {0}"
     "clearlag.manual_notification" = "Manual clearlag in {0}"
     
-    # Item command messages
-    "command.name.success" = "&aUpdated display name for {0} to: {1}"
-    "command.name.error" = "Error setting display name: &c{0}"
-    "command.tooltip.success" = "&aUpdated tooltip line {0} for {1} to: {2}"
-    "command.tooltip.error" = "Error setting tooltip: &c{0}"
-    "command.rarity.success" = "Updated rarity for {0} to: {1}"
-    "command.rarity.error" = "Error setting rarity: &c{0}"
-    "command.dump.collecting" = "&eCollecting item information..."
-    "command.dump.success" = "&aSuccessfully dumped {0} items to file:"
-    "command.dump.error" = "&cFailed to dump items: {0}"
-    "command.reload.checking" = "&eChecking and repairing config files if needed..."
-    "command.reload.success" = "&aConfiguration reloaded successfully!"
-    "command.reload.error" = "&cFailed to reload configuration: {0}"
-    
     # Clearlag notification messages
     "clearlag.notification.type.current" = "&eYour current clearlag notification type: &a{0}"
     "clearlag.notification.type.change" = "&7You can change it with: /clearlag notifications <type>"
@@ -51,10 +81,25 @@
     "clearlag.notification.type.none" = "&aClearlag notifications have been disabled (risky!)"
     "clearlag.notification.type.player_only" = "This command must be used by a player"
     
-    # Config messages
+    # Help command messages for clearlag
+    "command.clearlag.help.header" = "=== Clearlag Commands ==="
+    "command.clearlag.help.basic" = "/clearlag - Schedule a clearlag in 1 minute"
+    "command.clearlag.help.config" = "/clearlag config show - Show current configuration"
+    "command.clearlag.help.set" = "/clearlag config set <option> <value> - Change configuration"
+    "command.clearlag.help.time" = "/clearlag time - Check when the next clearlag will occur"
+    "command.clearlag.help.notifications" = "/clearlag notifications [type] - Set notification preferences (hotbar, chat, none)"
+    "command.clearlag.help.help" = "/clearlag help - Show this help message"
+    
+    # Config command messages
+    "config.show.header" = "=== Clearlag Configuration ==="
+    "config.show.general" = "General settings:"
+    "config.show.notifications" = "Notification settings:"
+    "config.show.usage.set" = "Use /clearlag config set <option> <value> to modify settings."
+    "config.show.usage.warning_times" = "Use /clearlag config set warningTimes list to see warning times."
+    "config.show.usage.entity_types" = "Use /clearlag config set entityTypes list to see entity types."
+    "config.unknown_setting" = "Unknown setting: {0}"
     "config.set.success" = "Set {0} to {1}"
-    "config.unknown_setting" = "Unknown setting: &c{0}"
-    "config.invalid_value" = "Invalid {0}: &c{1}"
+    "config.invalid_value" = "Invalid {0}: {1}"
     "config.add.warning_time.exists" = "Warning time {0} seconds is already in the list"
     "config.add.warning_time.success" = "&aAdded warning time: {0} seconds"
     "config.remove.warning_time.not_found" = "&cWarning time {0} seconds is not in the list"

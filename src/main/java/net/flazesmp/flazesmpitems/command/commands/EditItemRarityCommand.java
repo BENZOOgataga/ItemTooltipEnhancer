@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
@@ -21,6 +22,7 @@ import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EditItemRarityCommand implements IModCommand {
@@ -97,11 +99,11 @@ public class EditItemRarityCommand implements IModCommand {
             ItemRarity rarity = parseRarity(rarityName);
             
             if (rarity == null) {
-                source.sendFailure(Component.literal("Invalid rarity: " + rarityName));
-                source.sendFailure(Component.literal("Valid rarities: " + 
-                        Stream.of(ItemRarity.values())
-                            .map(r -> r.name().toLowerCase())
-                            .toList()));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.rarity.invalid", rarityName)));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.rarity.valid_values", 
+                    Stream.of(ItemRarity.values())
+                        .map(r -> r.name().toLowerCase())
+                        .collect(Collectors.joining(", ")))));
                 return 0;
             }
             
@@ -110,13 +112,13 @@ public class EditItemRarityCommand implements IModCommand {
             
             // Confirm to the user
             ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
-            source.sendSuccess(() -> Component.literal("Updated rarity for " + itemId + " to: " + rarity.getName())
+            source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("command.rarity.success", itemId.toString(), rarity.getName()))
                     .withStyle(style -> style.withColor(rarity.getColor().getColor())), true);
             
             return 1;
         } catch (Exception e) {
             // Handle any errors
-            source.sendFailure(Component.literal("Error setting rarity: " + e.getMessage()));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.rarity.error", e.getMessage())));
             return 0;
         }
     }
@@ -135,7 +137,8 @@ public class EditItemRarityCommand implements IModCommand {
             Item item = ForgeRegistries.ITEMS.getValue(resourceLocation);
             
             if (item == null) {
-                source.sendFailure(Component.literal("Item not found: " + itemId));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.not_found", itemId)));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.invalid_id", itemId)));
                 return 0;
             }
             
@@ -143,7 +146,7 @@ public class EditItemRarityCommand implements IModCommand {
             return executeSetRarity(context, item, rarityName);
             
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Invalid item ID format: " + itemId));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.invalid_id", itemId)));
             return 0;
         }
     }

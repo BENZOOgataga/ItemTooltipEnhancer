@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 
 public class GetTextureCommand implements IModCommand {
     
@@ -64,7 +65,7 @@ public class GetTextureCommand implements IModCommand {
         ItemStack heldItem = player.getMainHandItem();
         
         if (heldItem.isEmpty()) {
-            source.sendFailure(Component.literal("You must hold an item in your main hand"));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.held_item_requirement")));
             return 0;
         }
         
@@ -85,7 +86,7 @@ public class GetTextureCommand implements IModCommand {
             Item item = ForgeRegistries.ITEMS.getValue(resourceLocation);
             
             if (item == null) {
-                source.sendFailure(Component.literal("Item not found: " + itemId));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.not_found", itemId)));
                 return 0;
             }
             
@@ -93,7 +94,7 @@ public class GetTextureCommand implements IModCommand {
             sendTextureInfo(source, item, texturePath);
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Invalid item ID format: " + itemId));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.invalid_id", itemId)));
             return 0;
         }
     }
@@ -101,14 +102,14 @@ public class GetTextureCommand implements IModCommand {
     private static void sendTextureInfo(CommandSourceStack source, Item item, String texturePath) {
         ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
         
-        Component message = Component.literal("Item: ")
+        Component message = Component.literal(MessageConfig.getMessage("command.gettexture.item"))
             .withStyle(ChatFormatting.YELLOW)
             .append(Component.literal(itemId.toString())
                 .withStyle(ChatFormatting.GREEN));
         
         source.sendSuccess(() -> message, false);
         
-        Component textureMessage = Component.literal("Texture Path: ")
+        Component textureMessage = Component.literal(MessageConfig.getMessage("command.gettexture.path"))
             .withStyle(ChatFormatting.YELLOW)
             .append(Component.literal(texturePath)
                 .withStyle(ChatFormatting.AQUA));
@@ -116,14 +117,14 @@ public class GetTextureCommand implements IModCommand {
         source.sendSuccess(() -> textureMessage, false);
         
         // Create a clickable message to copy the texture path
-        Component copyMessage = Component.literal("[Click to Copy]")
+        Component copyMessage = Component.literal(MessageConfig.getMessage("command.gettexture.copy"))
             .withStyle(style -> style
                 .withColor(ChatFormatting.GOLD)
                 .withBold(true)
                 .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, texturePath))
                 .withHoverEvent(new HoverEvent(
                     HoverEvent.Action.SHOW_TEXT,
-                    Component.literal("Copy texture path to clipboard")
+                    Component.literal(MessageConfig.getMessage("command.gettexture.copy_tooltip"))
                 )));
         
         source.sendSuccess(() -> copyMessage, false);

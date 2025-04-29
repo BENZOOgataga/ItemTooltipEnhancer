@@ -3,6 +3,7 @@ package net.flazesmp.flazesmpitems.command.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.command.IModCommand;
@@ -85,14 +86,14 @@ public class EditItemNameCommand implements IModCommand {
             
             // Confirm to the user
             ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
-            source.sendSuccess(() -> Component.literal("Updated display name for " + itemId + " to: ")
-                    .withStyle(ChatFormatting.GREEN)
-                    .append(Component.literal(formattedName)), true);
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.name.success", itemId.toString(), formattedName))
+                .withStyle(ChatFormatting.GREEN), true);
             
             return 1;
         } catch (Exception e) {
             // Handle any errors
-            source.sendFailure(Component.literal("Error setting display name: " + e.getMessage()));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.name.error", e.getMessage())));
             return 0;
         }
     }

@@ -16,6 +16,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraft.world.item.ItemNameBlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -45,6 +46,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * Manages item rarities, custom names, tooltips and categories
@@ -57,6 +68,7 @@ public class RarityManager {
     private static final Map<ResourceLocation, String> ITEM_CATEGORIES = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, String> CUSTOM_NAMES = new ConcurrentHashMap<>();
     private static final Map<ResourceLocation, Map<Integer, String>> TOOLTIPS = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, ItemRarity> DEFAULT_RARITIES = new ConcurrentHashMap<>();
 
     // Default rarity
     private static final ItemRarity DEFAULT_RARITY = ItemRarity.COMMON;
@@ -73,8 +85,14 @@ public class RarityManager {
         // Initialize config system first
         ConfigManager.initialize();
         
+        // Load any custom default rarities from config file
+        loadDefaultRaritiesFromConfig();
+        
         // Apply manual rarities to specific items
         setupManualRarities();
+        
+        // Store default rarities for all items
+        saveDefaultRarities();
     }
     
     /**
@@ -478,22 +496,34 @@ public class RarityManager {
     }
     
     /**
-     * Clear all data for an item
+     * Clear all custom data for an item and reset to defaults
      * 
      * @param item The item to clear data for
      */
     public static void clearItemData(Item item) {
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        
+        // Get the default rarity before clearing
+        ItemRarity defaultRarity = getDefaultRarity(item);
+        
+        // Remove custom data
         ITEM_RARITIES.remove(id);
         ITEM_CATEGORIES.remove(id);
         CUSTOM_NAMES.remove(id);
         TOOLTIPS.remove(id);
         AUTO_RARITY_CACHE.remove(id);
         
+        // Restore default rarity (but don't save as custom)
+        if (defaultRarity != DEFAULT_RARITY) {
+            // Only restore non-common defaults
+            ITEM_RARITIES.put(id, defaultRarity);
+        }
+        
         // Also delete the config file
         ConfigManager.deleteItemConfig(item);
         
-        LOGGER.info("Cleared all custom data for item: {}", id);
+        LOGGER.info("Cleared all custom data for item: {}. Reset to default rarity: {}", 
+            id, defaultRarity.getName());
     }
     
     /**
@@ -833,5 +863,132 @@ public class RarityManager {
         
         // No specific type detected
         return "";
+    }
+
+    /**
+     * Gets the default rarity for an item (what it would have without custom settings)
+     * 
+     * @param item The item to check
+     * @return The default rarity
+     */
+    public static ItemRarity getDefaultRarity(Item item) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        if (id == null) return DEFAULT_RARITY;
+        
+        // If we have a stored default, use that
+        if (DEFAULT_RARITIES.containsKey(id)) {
+            return DEFAULT_RARITIES.get(id);
+        }
+        
+        // Otherwise calculate it
+        ItemRarity calculatedRarity = determineItemRarity(item);
+        DEFAULT_RARITIES.put(id, calculatedRarity); // Cache for next time
+        return calculatedRarity;
+    }
+
+    /**
+     * Save the default rarities to a config file
+     */
+    private static void saveDefaultRaritiesToConfig() {
+        try {
+            Path configDir = FMLPaths.CONFIGDIR.get();
+            Files.createDirectories(configDir);
+            
+            File defaultRaritiesFile = configDir.resolve("itemtooltipenhancer-default-rarities.json").toFile();
+            
+            JsonObject rootJson = new JsonObject();
+            JsonObject defaultRaritiesJson = new JsonObject();
+            
+            // Sort the entries for better readability
+            List<Map.Entry<ResourceLocation, ItemRarity>> sortedEntries = 
+                new ArrayList<>(DEFAULT_RARITIES.entrySet());
+            sortedEntries.sort(Comparator.comparing(e -> e.getKey().toString()));
+            
+            for (Map.Entry<ResourceLocation, ItemRarity> entry : sortedEntries) {
+                defaultRaritiesJson.addProperty(entry.getKey().toString(), entry.getValue().name());
+            }
+            
+            rootJson.add("default_rarities", defaultRaritiesJson);
+            
+            try (FileWriter writer = new FileWriter(defaultRaritiesFile)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(rootJson, writer);
+            }
+            
+            LOGGER.info("Saved default rarities to config file");
+        } catch (Exception e) {
+            LOGGER.error("Failed to save default rarities to config file", e);
+        }
+    }
+
+    /**
+     * Load default rarities from config file (if it exists)
+     * This allows server admins to customize default rarities
+     */
+    public static void loadDefaultRaritiesFromConfig() {
+        try {
+            Path configDir = FMLPaths.CONFIGDIR.get();
+            File defaultRaritiesFile = configDir.resolve("itemtooltipenhancer-default-rarities.json").toFile();
+            
+            if (!defaultRaritiesFile.exists()) {
+                LOGGER.info("No default rarities config file found, using calculated defaults");
+                return;
+            }
+            
+            JsonObject rootJson;
+            try (FileReader reader = new FileReader(defaultRaritiesFile)) {
+                rootJson = new Gson().fromJson(reader, JsonObject.class);
+            }
+            
+            if (rootJson.has("default_rarities")) {
+                JsonObject defaultRaritiesJson = rootJson.getAsJsonObject("default_rarities");
+                
+                for (Map.Entry<String, JsonElement> entry : defaultRaritiesJson.entrySet()) {
+                    try {
+                        ResourceLocation id = new ResourceLocation(entry.getKey());
+                        String rarityStr = entry.getValue().getAsString();
+                        ItemRarity rarity = ItemRarity.valueOf(rarityStr);
+                        
+                        DEFAULT_RARITIES.put(id, rarity);
+                    } catch (Exception e) {
+                        LOGGER.warn("Invalid default rarity entry: {} = {}", 
+                            entry.getKey(), entry.getValue().getAsString());
+                    }
+                }
+                
+                LOGGER.info("Loaded {} default rarities from config file", DEFAULT_RARITIES.size());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load default rarities from config file", e);
+        }
+    }
+
+    /**
+     * Stores the default rarities for all items after manual assignments
+     */
+    private static void saveDefaultRarities() {
+        // Clear the map first
+        DEFAULT_RARITIES.clear();
+        
+        // Go through all registered items and calculate their default rarities
+        for (Item item : ForgeRegistries.ITEMS.getValues()) {
+            ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            if (id == null) continue;
+            
+            // Determine the rarity - either manually set or calculated
+            ItemRarity rarity;
+            if (ITEM_RARITIES.containsKey(id)) {
+                rarity = ITEM_RARITIES.get(id);
+            } else {
+                rarity = determineItemRarity(item);
+            }
+            
+            // Store as default
+            DEFAULT_RARITIES.put(id, rarity);
+        }
+        
+        // Save the default rarities to a config file for reference/editing
+        saveDefaultRaritiesToConfig();
+        
+        LOGGER.info("Stored default rarities for {} items", DEFAULT_RARITIES.size());
     }
 }

@@ -218,8 +218,16 @@ public class MessageConfig {
         messageCache.clear();
         
         File messagesFile = FMLPaths.CONFIGDIR.get().resolve(MESSAGES_FILE).toFile();
+        
+        FlazeSMPItems.LOGGER.info("Attempting to load messages from: {}", messagesFile.getAbsolutePath());
+        
         if (!messagesFile.exists()) {
-            FlazeSMPItems.LOGGER.info("No custom messages file found, using defaults");
+            FlazeSMPItems.LOGGER.warn("Messages file not found at: {}", messagesFile.getAbsolutePath());
+            return;
+        }
+        
+        if (!messagesFile.canRead()) {
+            FlazeSMPItems.LOGGER.error("Cannot read messages file (permission issue): {}", messagesFile.getAbsolutePath());
             return;
         }
         
@@ -233,8 +241,11 @@ public class MessageConfig {
                 messagesProps.clear();
                 for (Map.Entry<String, String> entry : parsedMessages.entrySet()) {
                     messagesProps.setProperty(entry.getKey(), entry.getValue());
+                    FlazeSMPItems.LOGGER.debug("Loaded message: {} = {}", entry.getKey(), entry.getValue());
                 }
                 FlazeSMPItems.LOGGER.info("Loaded {} custom messages from TOML", parsedMessages.size());
+            } else {
+                FlazeSMPItems.LOGGER.warn("No messages found in TOML file");
             }
         } catch (Exception e) {
             FlazeSMPItems.LOGGER.error("Failed to load messages from TOML file", e);
@@ -252,31 +263,35 @@ public class MessageConfig {
     }
     
     /**
-     * Gets a configured message, falling back to the original if not configured
-     * 
-     * @param key The message key
-     * @param params Optional parameters to format into the message
-     * @return The formatted message
+     * Explicitly reloads messages from the TOML file
+     * This is called by the reload command
      */
-    public static String getMessage(String key, Object... params) {
-        // Check cache first
-        if (messageCache.containsKey(key)) {
-            return formatMessage(messageCache.get(key), params);
+    public static void reloadMessages() {
+        FlazeSMPItems.LOGGER.info("Explicitly reloading message config...");
+        
+        // Check if the file exists, and recreate if missing
+        File messagesFile = FMLPaths.CONFIGDIR.get().resolve(MESSAGES_FILE).toFile();
+        if (!messagesFile.exists()) {
+            FlazeSMPItems.LOGGER.warn("Messages file missing. Recreating from template...");
+            createMessagesFile(); // Recreate the missing file
         }
         
-        // Get from properties
-        String message = messagesProps.getProperty(key);
+        // Clear both the properties and the cache
+        messagesProps.clear();
+        messageCache.clear();
         
-        // Fall back to original message if not in properties
-        if (message == null) {
-            message = ORIGINAL_MESSAGES.getOrDefault(key, "Missing message: " + key);
+        // Reload messages from file
+        loadMessages();
+        
+        // Debug output of a few key messages to verify loading
+        if (messagesProps.containsKey("command.reset.held_item_requirement")) {
+            FlazeSMPItems.LOGGER.info("Sample loaded message - command.reset.held_item_requirement: '{}'", 
+                messagesProps.getProperty("command.reset.held_item_requirement"));
+        } else {
+            FlazeSMPItems.LOGGER.warn("Sample message 'command.reset.held_item_requirement' not found in config");
         }
         
-        // Cache for future use
-        messageCache.put(key, message);
-        
-        // Format with parameters
-        return formatMessage(message, params);
+        FlazeSMPItems.LOGGER.info("Message config reloaded successfully with {} messages", messagesProps.size());
     }
     
     /**
@@ -322,18 +337,18 @@ public class MessageConfig {
             // Process line by line
             String[] lines = content.split("\n");
             for (String line : lines) {
-                line = line.trim();
+                String trimmedLine = line.trim();
                 
                 // Skip comments and empty lines
-                if (line.isEmpty() || line.startsWith("#")) {
+                if (trimmedLine.isEmpty() || trimmedLine.startsWith("#") || trimmedLine.startsWith("//")) {
                     continue;
                 }
                 
                 // Check for section markers
-                if (line.equals("[messages]")) {
+                if (trimmedLine.equals("[messages]")) {
                     inMessagesSection = true;
                     continue;
-                } else if (line.startsWith("[") && line.endsWith("]")) {
+                } else if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
                     inMessagesSection = false;
                     continue;
                 }
@@ -344,22 +359,80 @@ public class MessageConfig {
                 }
                 
                 // Parse key-value pairs
-                int equalsPos = line.indexOf('=');
+                int equalsPos = trimmedLine.indexOf('=');
                 if (equalsPos > 0) {
-                    String key = line.substring(0, equalsPos).trim();
-                    String value = line.substring(equalsPos + 1).trim();
+                    // Extract key and value, handling quotes properly
+                    String key = trimmedLine.substring(0, equalsPos).trim();
+                    String value = trimmedLine.substring(equalsPos + 1).trim();
                     
-                    // Clean up key and value
-                    key = key.replaceAll("^\"|\"$", "").trim();
-                    value = value.replaceAll("^\"|\"$", "").trim();
+                    // Remove quotes from key
+                    if (key.startsWith("\"") && key.endsWith("\"")) {
+                        key = key.substring(1, key.length() - 1);
+                    }
                     
-                    if (!key.isEmpty() && !value.isEmpty()) {
+                    // Remove quotes from value
+                    if (value.startsWith("\"") && value.endsWith("\"")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+                    
+                    if (!key.isEmpty()) {
                         result.put(key, value);
+                        FlazeSMPItems.LOGGER.debug("Parsed message: {} = {}", key, value);
                     }
                 }
             }
             
+            FlazeSMPItems.LOGGER.debug("Parsed {} messages from TOML", result.size());
+            
+            // Debug output - print a few important messages
+            if (result.containsKey("command.reset.held_item_requirement")) {
+                FlazeSMPItems.LOGGER.info("Parsed 'command.reset.held_item_requirement': '{}'",
+                    result.get("command.reset.held_item_requirement"));
+            }
+            if (result.containsKey("command.reset.success")) {
+                FlazeSMPItems.LOGGER.info("Parsed 'command.reset.success': '{}'",
+                    result.get("command.reset.success"));
+            }
+            
             return result;
         }
+    }
+    
+    /**
+     * Gets a configured message, falling back to the original if not configured
+     * 
+     * @param key The message key
+     * @param params Optional parameters to format into the message
+     * @return The formatted message
+     */
+    public static String getMessage(String key, Object... params) {
+        // Check cache first
+        if (messageCache.containsKey(key)) {
+            String cached = messageCache.get(key);
+            FlazeSMPItems.LOGGER.debug("Using cached message for {}: {}", key, cached);
+            return formatMessage(cached, params);
+        }
+        
+        // Get from properties
+        String message = messagesProps.getProperty(key);
+        
+        // Log what was found in the properties
+        if (message != null) {
+            FlazeSMPItems.LOGGER.debug("Found message in properties for {}: {}", key, message);
+        } else {
+            FlazeSMPItems.LOGGER.debug("No message found in properties for {}", key);
+        }
+        
+        // Fall back to original message if not in properties
+        if (message == null) {
+            message = ORIGINAL_MESSAGES.getOrDefault(key, "Missing message: " + key);
+            FlazeSMPItems.LOGGER.debug("Using default message for {}: {}", key, message);
+        }
+        
+        // Cache for future use
+        messageCache.put(key, message);
+        
+        // Format with parameters
+        return formatMessage(message, params);
     }
 }

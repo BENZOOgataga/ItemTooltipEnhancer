@@ -3,11 +3,13 @@ package net.flazesmp.flazesmpitems.command.commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
+import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -34,7 +36,7 @@ public class ResetItemCommand implements IModCommand {
             .requires(source -> source.hasPermission(2)) // Admin permission level
             
             // Reset held item (no arguments)
-            .executes(context -> executeResetHeldItem(context.getSource()))
+            .executes(context -> executeResetHeldItem(context)) // Fixed: Pass the context, not source
             
             // Item argument using vanilla item argument type
             .then(Commands.argument("item", ItemArgument.item(buildContext))
@@ -67,79 +69,105 @@ public class ResetItemCommand implements IModCommand {
     }
     
     /**
-     * Execute resetting for the item in the player's main hand
+     * Execute resetting an item to default
      */
-    private static int executeResetHeldItem(CommandSourceStack source) {
+    private static int executeResetItem(CommandContext<CommandSourceStack> context, Item item) {
+        CommandSourceStack source = context.getSource();
+        
         try {
-            // Get the player's held item
-            ServerPlayer player = source.getPlayerOrException();
-            ItemStack heldItem = player.getMainHandItem();
+            ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
             
-            if (heldItem.isEmpty()) {
-                source.sendFailure(Component.literal("You must hold an item in your main hand"));
-                return 0;
-            }
+            // Determine the item's default rarity BEFORE clearing data
+            ItemRarity defaultRarity = RarityManager.getDefaultRarity(item);
             
-            Item item = heldItem.getItem();
-            
-            // Clear all custom data from the item maps
+            // Clear all custom data for the item
             RarityManager.clearItemData(item);
             
-            // Reset the actual held item
-            resetItemStack(heldItem);
-            
-            // Update the player's inventory to refresh the client
-            player.getInventory().setChanged();
-            
-            // Provide feedback
-            ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
-            source.sendSuccess(() -> Component.literal("Reset item in hand: ")
-                    .withStyle(ChatFormatting.GREEN)
-                    .append(Component.literal(itemId.toString())
-                    .withStyle(ChatFormatting.YELLOW)), true);
-            
+            // Tell the user what was reset
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.success", itemId.toString()))
+                .withStyle(ChatFormatting.GREEN), true);
+                
+            // Show what was reset with indented feedback
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.displayname"))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.tooltips"))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.rarity", defaultRarity.getName()))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.config"))
+                .withStyle(ChatFormatting.GRAY), false);
+                
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Error resetting held item: " + e.getMessage()));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.error", e.getMessage())));
+            e.printStackTrace();
             return 0;
         }
     }
     
     /**
-     * Execute resetting an item
+     * Execute resetting the item currently held in the player's hand
      */
-    private static int executeResetItem(
-            CommandContext<CommandSourceStack> context, Item item) {
-        
+    private static int executeResetHeldItem(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         
         try {
-            // Clear all custom data from the item maps
+            // Check if the source is a player
+            if (!source.isPlayer()) {
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.held_item_requirement")));
+                return 0;
+            }
+            
+            // Get the item held in main hand
+            ItemStack heldItem = source.getPlayerOrException().getMainHandItem();
+            if (heldItem.isEmpty()) {
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.held_item_requirement")));
+                return 0;
+            }
+            
+            Item item = heldItem.getItem();
+            ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
+            
+            // Determine the item's default rarity BEFORE clearing data
+            ItemRarity defaultRarity = RarityManager.getDefaultRarity(item);
+            
+            // Clear all custom data for the item
             RarityManager.clearItemData(item);
             
-            // Also reset all instances of this item in the player's inventory
-            resetAllInstancesInInventory(source, item);
-            
-            // Provide feedback
-            ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
-            source.sendSuccess(() -> Component.literal("Reset item: ")
-                    .withStyle(ChatFormatting.GREEN)
-                    .append(Component.literal(itemId.toString())
-                    .withStyle(ChatFormatting.YELLOW)), true);
-            
-            source.sendSuccess(() -> Component.literal("• Display name reset to default")
-                    .withStyle(ChatFormatting.GRAY), false);
-            source.sendSuccess(() -> Component.literal("• Custom tooltips removed")
-                    .withStyle(ChatFormatting.GRAY), false);
-            source.sendSuccess(() -> Component.literal("• Rarity reset to COMMON")
-                    .withStyle(ChatFormatting.GRAY), false);
-            source.sendSuccess(() -> Component.literal("• Config file deleted")
-                    .withStyle(ChatFormatting.GRAY), false);
-            
+            // Tell the user what was reset
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.success.held", itemId.toString()))
+                .withStyle(ChatFormatting.GREEN), true);
+                
+            // Show what was reset with indented feedback
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.displayname"))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.tooltips"))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.rarity", defaultRarity.getName()))
+                .withStyle(ChatFormatting.GRAY), false);
+                
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.reset.tooltip.config"))
+                .withStyle(ChatFormatting.GRAY), false);
+        
             return 1;
         } catch (Exception e) {
-            // Handle any errors
-            source.sendFailure(Component.literal("Error resetting item: " + e.getMessage()));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.error", e.getMessage())));
+            e.printStackTrace();
             return 0;
         }
     }
@@ -158,7 +186,7 @@ public class ResetItemCommand implements IModCommand {
             Item item = ForgeRegistries.ITEMS.getValue(resourceLocation);
             
             if (item == null) {
-                source.sendFailure(Component.literal("Item not found: " + itemId));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.not_found", itemId)));
                 return 0;
             }
             
@@ -166,7 +194,7 @@ public class ResetItemCommand implements IModCommand {
             return executeResetItem(context, item);
             
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Invalid item ID format: " + itemId));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.invalid_id", itemId)));
             return 0;
         }
     }

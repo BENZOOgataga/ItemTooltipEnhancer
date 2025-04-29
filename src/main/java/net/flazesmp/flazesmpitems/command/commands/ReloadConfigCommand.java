@@ -7,7 +7,8 @@ import com.mojang.brigadier.context.CommandContext;
 import net.flazesmp.flazesmpitems.clearlag.ClearlagManager;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
-import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter; // Ajout de cet import
+import net.flazesmp.flazesmpitems.config.MessageConfig;
+import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -39,11 +40,14 @@ public class ReloadConfigCommand implements IModCommand {
         CommandSourceStack source = context.getSource();
         
         try {
-            source.sendSuccess(() -> Component.literal("Checking and repairing config files if needed...")
+            source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("command.reload.checking"))
                     .withStyle(ChatFormatting.YELLOW), true);
                     
             // Check and repair configurations if necessary
             ConfigManager.checkAndRepairConfig();
+            
+            // Reload the message configuration first
+            MessageConfig.reloadMessages();
             
             // Reload the mappings for tooltips
             StatTooltipFormatter.setupDefaultAttributeMappings();
@@ -54,14 +58,15 @@ public class ReloadConfigCommand implements IModCommand {
             // Reschedule clearlag task to apply new settings
             ClearlagManager.rescheduleWithNewSettings();
             
-            source.sendSuccess(() -> Component.literal("Configuration reloaded successfully!")
+            source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("command.reload.success"))
                     .withStyle(ChatFormatting.GREEN), true);
             
-            return 1;
+            return Command.SINGLE_SUCCESS;
         } catch (Exception e) {
             LOGGER.error("Failed to reload configuration", e);
-            source.sendFailure(Component.literal("Failed to reload configuration: " + e.getMessage())
-                    .withStyle(ChatFormatting.RED));
+            source.sendFailure(Component.literal(
+                    MessageConfig.getMessage("command.reload.error", e.getMessage()))
+                .withStyle(ChatFormatting.RED));
             return 0;
         }
     }

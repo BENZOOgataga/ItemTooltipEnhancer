@@ -151,8 +151,8 @@ public class ClearlagCommand {
     private static int executeShowConfig(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         
-        source.sendSuccess(() -> Component.literal("=== Clearlag Configuration ===").withStyle(ChatFormatting.GOLD), false);
-        source.sendSuccess(() -> Component.literal("General settings:").withStyle(ChatFormatting.YELLOW), false);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.show.header")).withStyle(ChatFormatting.GOLD), false);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.show.general")).withStyle(ChatFormatting.YELLOW), false);
         source.sendSuccess(() -> Component.literal("- Enable auto clearlag: ")
             .append(Component.literal(String.valueOf(ClearlagConfig.SERVER.enableAutoClearlag.get()))
                     .withStyle(ClearlagConfig.SERVER.enableAutoClearlag.get() ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
@@ -177,17 +177,9 @@ public class ClearlagCommand {
             .append(Component.literal(String.valueOf(ClearlagConfig.SERVER.shortNotificationThresholdSeconds.get()))
                     .withStyle(ChatFormatting.AQUA)), false);
         
-        source.sendSuccess(() -> Component.literal("Use ").withStyle(ChatFormatting.GRAY)
-            .append(Component.literal("/clearlag config set <option> <value>").withStyle(ChatFormatting.WHITE))
-            .append(Component.literal(" to modify settings.").withStyle(ChatFormatting.GRAY)), false);
-        
-        source.sendSuccess(() -> Component.literal("Use ").withStyle(ChatFormatting.GRAY)
-            .append(Component.literal("/clearlag config set warningTimes list").withStyle(ChatFormatting.WHITE))
-            .append(Component.literal(" to see warning times.").withStyle(ChatFormatting.GRAY)), false);
-            
-        source.sendSuccess(() -> Component.literal("Use ").withStyle(ChatFormatting.GRAY)
-            .append(Component.literal("/clearlag config set entityTypes list").withStyle(ChatFormatting.WHITE))
-            .append(Component.literal(" to see entity types.").withStyle(ChatFormatting.GRAY)), false);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.show.usage.set")).withStyle(ChatFormatting.GRAY), false);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.show.usage.warning_times")).withStyle(ChatFormatting.GRAY), false);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.show.usage.entity_types")).withStyle(ChatFormatting.GRAY), false);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -284,14 +276,13 @@ public class ClearlagCommand {
             }
             case "useDynamicCountdown" -> ClearlagConfig.SERVER.useDynamicCountdown.set(value);
             default -> {
-                source.sendFailure(Component.literal("Unknown setting: " + setting).withStyle(ChatFormatting.RED));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("config.unknown_setting", setting)).withStyle(ChatFormatting.RED));
                 return 0;
             }
         }
         
-        source.sendSuccess(() -> Component.literal("Set " + setting + " to ")
-            .append(Component.literal(String.valueOf(value))
-                    .withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED)), true);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.set.success", setting, value ? "enabled" : "disabled"))
+            .withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED), true);
         
         saveConfigAndReschedule();
         return Command.SINGLE_SUCCESS;
@@ -309,14 +300,13 @@ public class ClearlagCommand {
             case "longNotificationThresholdSeconds" -> ClearlagConfig.SERVER.longNotificationThresholdSeconds.set(value);
             case "shortNotificationThresholdSeconds" -> ClearlagConfig.SERVER.shortNotificationThresholdSeconds.set(value);
             default -> {
-                source.sendFailure(Component.literal("Unknown setting: " + setting).withStyle(ChatFormatting.RED));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("config.unknown_setting", setting)).withStyle(ChatFormatting.RED));
                 return 0;
             }
         }
         
-        source.sendSuccess(() -> Component.literal("Set " + setting + " to ")
-            .append(Component.literal(String.valueOf(value))
-                    .withStyle(ChatFormatting.AQUA)), true);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.set.success", setting, value))
+            .withStyle(ChatFormatting.AQUA), true);
         
         saveConfigAndReschedule();
         return Command.SINGLE_SUCCESS;
@@ -340,12 +330,12 @@ public class ClearlagCommand {
                 saveConfigAndReschedule();
                 return Command.SINGLE_SUCCESS;
             } catch (IllegalArgumentException e) {
-                source.sendFailure(Component.literal("Invalid notification type: " + value)
+                source.sendFailure(Component.literal(MessageConfig.getMessage("config.invalid_value", "notification type", value))
                     .withStyle(ChatFormatting.RED));
                 return 0;
             }
         } else {
-            source.sendFailure(Component.literal("Unknown setting: " + setting)
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.unknown_setting", setting))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -360,7 +350,7 @@ public class ClearlagCommand {
         List<Integer> currentWarningTimes = new ArrayList<>(ClearlagConfig.SERVER.warningTimesSeconds.get());
         
         if (currentWarningTimes.contains(seconds)) {
-            source.sendFailure(Component.literal("Warning time " + seconds + " seconds is already in the list")
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.add.warning_time.exists", seconds))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -368,9 +358,8 @@ public class ClearlagCommand {
         currentWarningTimes.add(seconds);
         ClearlagConfig.SERVER.warningTimesSeconds.set(currentWarningTimes);
         
-        source.sendSuccess(() -> Component.literal("Added warning time: ")
-            .append(Component.literal(seconds + " seconds")
-                    .withStyle(ChatFormatting.GREEN)), true);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.add.warning_time.success", seconds))
+            .withStyle(ChatFormatting.GREEN), true);
         
         saveConfigAndReschedule();
         return Command.SINGLE_SUCCESS;
@@ -385,13 +374,13 @@ public class ClearlagCommand {
         List<Integer> currentWarningTimes = new ArrayList<>(ClearlagConfig.SERVER.warningTimesSeconds.get());
         
         if (!currentWarningTimes.contains(seconds)) {
-            source.sendFailure(Component.literal("Warning time " + seconds + " seconds is not in the list")
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.remove.warning_time.not_found", seconds))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
         
         if (currentWarningTimes.size() <= 1) {
-            source.sendFailure(Component.literal("Cannot remove the last warning time")
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.remove.warning_time.last"))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -399,9 +388,8 @@ public class ClearlagCommand {
         currentWarningTimes.remove(Integer.valueOf(seconds));
         ClearlagConfig.SERVER.warningTimesSeconds.set(currentWarningTimes);
         
-        source.sendSuccess(() -> Component.literal("Removed warning time: ")
-            .append(Component.literal(seconds + " seconds")
-                    .withStyle(ChatFormatting.RED)), true);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.remove.warning_time.success", seconds))
+            .withStyle(ChatFormatting.RED), true);
         
         saveConfigAndReschedule();
         return Command.SINGLE_SUCCESS;
@@ -482,13 +470,13 @@ public class ClearlagCommand {
         List<String> currentEntityTypes = new ArrayList<>(ClearlagConfig.SERVER.entityTypesToClear.get());
         
         if (!currentEntityTypes.contains(entityType)) {
-            source.sendFailure(Component.literal("Entity type " + entityType + " is not in the list")
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.remove.entity_type.not_found", entityType))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
         
         if (currentEntityTypes.size() <= 1) {
-            source.sendFailure(Component.literal("Cannot remove the last entity type")
+            source.sendFailure(Component.literal(MessageConfig.getMessage("config.remove.entity_type.last"))
                 .withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -496,9 +484,8 @@ public class ClearlagCommand {
         currentEntityTypes.remove(entityType);
         ClearlagConfig.SERVER.entityTypesToClear.set(currentEntityTypes);
         
-        source.sendSuccess(() -> Component.literal("Removed entity type: ")
-            .append(Component.literal(finalEntityType)
-                    .withStyle(ChatFormatting.RED)), true);
+        source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("config.remove.entity_type.success", finalEntityType))
+            .withStyle(ChatFormatting.RED), true);
         
         saveConfigAndReschedule();
         return Command.SINGLE_SUCCESS;

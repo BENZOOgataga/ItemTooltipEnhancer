@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import net.flazesmp.flazesmpitems.config.MessageConfig;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.flazesmp.flazesmpitems.command.IModCommand;
@@ -105,14 +106,14 @@ public class EditItemTooltipCommand implements IModCommand {
             
             // Confirm to the user
             ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(item);
-            source.sendSuccess(() -> Component.literal("Updated tooltip line " + line + " for " + itemId + " to: ")
-                    .withStyle(ChatFormatting.GREEN)
-                    .append(Component.literal(formattedText)), true);
+            source.sendSuccess(() -> Component.literal(
+                MessageConfig.getMessage("command.tooltip.success", line, itemId.toString(), text))
+                .withStyle(ChatFormatting.GREEN), true);
             
             return 1;
         } catch (Exception e) {
             // Handle any errors
-            source.sendFailure(Component.literal("Error setting tooltip: " + e.getMessage()));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.tooltip.error", e.getMessage())));
             return 0;
         }
     }
@@ -131,7 +132,7 @@ public class EditItemTooltipCommand implements IModCommand {
             Item item = ForgeRegistries.ITEMS.getValue(resourceLocation);
             
             if (item == null) {
-                source.sendFailure(Component.literal("Item not found: " + itemId));
+                source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.not_found", itemId)));
                 return 0;
             }
             
@@ -139,7 +140,7 @@ public class EditItemTooltipCommand implements IModCommand {
             return executeSetTooltip(context, item, line, text);
             
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Invalid item ID format: " + itemId));
+            source.sendFailure(Component.literal(MessageConfig.getMessage("command.reset.invalid_id", itemId)));
             return 0;
         }
     }
