@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
-import net.flazesmp.flazesmpitems.tooltip.TooltipConfig;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.resources.ResourceLocation;
@@ -20,7 +19,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -336,7 +334,9 @@ public class ConfigManager {
         
         // Check main config directory
         Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR);
-        if (!Files.exists(configDir)) {
+        if (Files.exists(configDir)) {
+            LOGGER.warn("Existing config files detected in {}. Please review them carefully.", configDir);
+        } else {
             LOGGER.info("Creating config directory: {}", configDir);
             try {
                 Files.createDirectories(configDir);
@@ -351,60 +351,12 @@ public class ConfigManager {
             }
         }
         
-        // Check tooltip config file in Forge config directory
-        Path tooltipConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-tooltips.toml");
-        if (!Files.exists(tooltipConfigFile)) {
-            LOGGER.info("Creating tooltip config file: {}", tooltipConfigFile);
-            try {
-                // Important: ensure the generated TOML file has the correct structure
-                String tooltipConfig = 
-                    "#ItemTooltipEnhancer Tooltip Formatting Configuration\n" +
-                    "[general]\n" +
-                    "\t#Enable Hypixel Skyblock-style stat formatting\n" +
-                    "\tenableStatFormatting = false\n\n" +
-                    "[display]\n" +
-                    "\t#Show a header above the stats section\n" +
-                    "\tshowStatHeader = false\n" +
-                    "\t#Text to show as the stats header (supports & color codes)\n" +
-                    "\tstatHeaderText = \"&9&lSTATS\"\n\n" +
-                    "[statNames]\n" +
-                    "\tattack_damage = \"Damage\"\n" +
-                    "\tattack_damage_internal = \"attack damage\"\n" +
-                    "\tattack_speed = \"Attack Speed\"\n" +
-                    "\tattack_speed_internal = \"attack speed\"\n" +
-                    "\tarmor = \"Defense\"\n" +
-                    "\tarmor_internal = \"armor\"\n" +
-                    "\tarmor_toughness = \"Armor Toughness\"\n" +
-                    "\tarmor_toughness_internal = \"armor toughness\"\n" +
-                    "\tknockback_resistance = \"Knockback Resistance\"\n" +
-                    "\tknockback_resistance_internal = \"knockback resistance\"\n" +
-                    "\tmax_health = \"Health\"\n" +
-                    "\tmax_health_internal = \"max health\"\n" +
-                    "\tmovement_speed = \"Speed\"\n" +
-                    "\tmovement_speed_internal = \"movement speed\"\n" +
-                    "\tluck = \"Luck\"\n" +
-                    "\tluck_internal = \"luck\"\n" +
-                    "\treach_distance = \"Reach\"\n" +
-                    "\treach_distance_internal = \"reach distance\"\n" +
-                    "\tmining_speed = \"Mining Speed\"\n" +
-                    "\tmining_speed_internal = \"mining speed\"\n" +
-                    "\tmagic_damage = \"Magic Damage\"\n" +
-                    "\tmagic_damage_internal = \"magic damage\"\n" +
-                    "\tcrit_chance = \"Crit Chance\"\n" +
-                    "\tcrit_chance_internal = \"critical chance\"\n" +
-                    "\tcrit_damage = \"Crit Damage\"\n" +
-                    "\tcrit_damage_internal = \"critical damage\"";
-                
-                Files.writeString(tooltipConfigFile, tooltipConfig, StandardCharsets.UTF_8);
-                needsRepair = true;
-            } catch (IOException e) {
-                LOGGER.error("Failed to create tooltip config file: {}", e.getMessage());
-            }
-        }
         
         // Check clearlag config file
         Path clearlagConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-clearlag.toml");
-        if (!Files.exists(clearlagConfigFile)) {
+        if (Files.exists(clearlagConfigFile)) {
+            LOGGER.warn("Existing clearlag config detected at {}. Proceed with caution.", clearlagConfigFile);
+        } else {
             LOGGER.warn("Clearlag config file doesn't exist, will create: {}", clearlagConfigFile);
             needsRepair = true;
         }

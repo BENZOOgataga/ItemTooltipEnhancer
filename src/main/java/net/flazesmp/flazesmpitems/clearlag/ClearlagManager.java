@@ -74,6 +74,14 @@ public class ClearlagManager {
         nextClearlagTime = System.currentTimeMillis() + (intervalMinutes * 60 * 1000L);
         FlazeSMPItems.LOGGER.info("Next clearlag scheduled in {} minutes", intervalMinutes);
     }
+
+    /**
+     * Initialize automatic clearlag when the server starts
+     */
+    @SubscribeEvent
+    public static void onServerStarted(net.minecraftforge.event.server.ServerStartedEvent event) {
+        scheduleNextClearlag();
+    }
     
     /**
      * Reschedule clearlag with new settings (called after config reload)
