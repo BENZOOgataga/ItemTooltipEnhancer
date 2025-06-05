@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -79,6 +80,11 @@ public class ClearlagManager {
      * Reschedule clearlag with new settings (called after config reload)
      */
     public static void rescheduleWithNewSettings() {
+        scheduleNextClearlag();
+    }
+
+    @SubscribeEvent
+    public static void onServerStarted(ServerStartedEvent event) {
         scheduleNextClearlag();
     }
     

@@ -913,9 +913,13 @@ public class RarityManager {
         try {
             Path configDir = FMLPaths.CONFIGDIR.get();
             Files.createDirectories(configDir);
-            
+
             File defaultRaritiesFile = configDir.resolve("itemtooltipenhancer-default-rarities.json").toFile();
-            
+
+            if (defaultRaritiesFile.exists()) {
+                return; // don't overwrite existing file
+            }
+
             JsonObject rootJson = new JsonObject();
             JsonObject defaultRaritiesJson = new JsonObject();
             

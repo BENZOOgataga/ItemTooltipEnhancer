@@ -8,7 +8,6 @@ import net.flazesmp.flazesmpitems.clearlag.ClearlagManager;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.config.MessageConfig;
-import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -49,8 +48,6 @@ public class ReloadConfigCommand implements IModCommand {
             // Reload the message configuration first
             MessageConfig.reloadMessages();
             
-            // Reload the mappings for tooltips
-            StatTooltipFormatter.setupDefaultAttributeMappings();
             
             // Load all configurations
             ConfigManager.loadAllConfigs();

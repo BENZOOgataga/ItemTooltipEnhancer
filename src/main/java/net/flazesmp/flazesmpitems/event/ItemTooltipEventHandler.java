@@ -2,7 +2,6 @@ package net.flazesmp.flazesmpitems.event;
 
 import net.flazesmp.flazesmpitems.tooltip.SpecialItemTooltipHandler;
 import net.flazesmp.flazesmpitems.FlazeSMPItems;
-import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
 import net.flazesmp.flazesmpitems.util.ItemRarity;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.ChatFormatting;
@@ -70,8 +69,7 @@ public class ItemTooltipEventHandler {
             RarityManager.applyCustomDataToItemStack(stack);
         }
         
-        // Process the tooltip with our stat formatter (do this first)
-        boolean statsChanged = StatTooltipFormatter.processTooltip(tooltip, stack);
+        // Process special formatting if needed (stat formatting removed)
         
         // Remove vanilla categories and mod names
         removeUnwantedTooltipLines(tooltip);
