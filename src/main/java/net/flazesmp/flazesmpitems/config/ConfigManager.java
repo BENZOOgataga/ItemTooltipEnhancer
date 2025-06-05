@@ -356,7 +356,7 @@ public class ConfigManager {
         if (!Files.exists(tooltipConfigFile)) {
             LOGGER.info("Creating tooltip config file: {}", tooltipConfigFile);
             try {
-                // Modification importante ici: structure correcte du fichier TOML
+                // Important: ensure the generated TOML file has the correct structure
                 String tooltipConfig = 
                     "#ItemTooltipEnhancer Tooltip Formatting Configuration\n" +
                     "[general]\n" +
