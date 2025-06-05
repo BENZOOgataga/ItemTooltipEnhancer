@@ -6,8 +6,6 @@ import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.flazesmp.flazesmpitems.event.ItemDisplayNameHandler;
 import net.flazesmp.flazesmpitems.event.ItemTooltipEventHandler;
-import net.flazesmp.flazesmpitems.tooltip.StatTooltipFormatter;
-import net.flazesmp.flazesmpitems.tooltip.TooltipConfig;
 import net.flazesmp.flazesmpitems.util.RarityManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -29,21 +27,17 @@ public class FlazeSMPItems {
         MinecraftForge.EVENT_BUS.register(ItemDisplayNameHandler.class);
         
         // Register configs first
-        TooltipConfig.register();
         ClearlagConfig.register(); // Register clearlag configuration
         MessageConfig.register(); // Register message configuration
         
-        // Initialize default mappings (without relying on config)
-        StatTooltipFormatter.setupDefaultAttributeMappings();
-        
         // Initialize the ConfigManager
+        
         ConfigManager.initialize();
         
         // Initialize the RarityManager
         RarityManager.initialize();
         
         // Register to the mod event bus
-        modEventBus.register(TooltipConfig.class);
         modEventBus.register(ClearlagConfig.class); // Register clearlag config events
         modEventBus.register(MessageConfig.class); // Register message config events
         
