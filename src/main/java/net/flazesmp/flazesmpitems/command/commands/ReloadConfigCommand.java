@@ -4,7 +4,6 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
-import net.flazesmp.flazesmpitems.clearlag.ClearlagManager;
 import net.flazesmp.flazesmpitems.command.IModCommand;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.config.MessageConfig;
@@ -51,8 +50,6 @@ public class ReloadConfigCommand implements IModCommand {
             // Load all configurations
             ConfigManager.loadAllConfigs();
             
-            // Reschedule clearlag task to apply new settings
-            ClearlagManager.rescheduleWithNewSettings();
             
             source.sendSuccess(() -> Component.literal(MessageConfig.getMessage("command.reload.success"))
                     .withStyle(ChatFormatting.GREEN), true);

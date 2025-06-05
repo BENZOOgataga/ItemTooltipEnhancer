@@ -6,8 +6,7 @@ Item Tooltip Enhancer is a Forge mod for Minecraft 1.20.1 that expands the infor
 
 - **Custom item rarities** – Items are assigned rarities (Common, Uncommon, Rare, Epic, Legendary, Mythic, Special, Admin) that control the color of the name and rarity line in the tooltip.
 - **Configurable tooltips** – Per-item JSON files allow you to change an item's display name, category, rarity, tooltip lines, and more.
-- **Automatic clearlag** – Built‑in clearlag system, enabled by default, to periodically remove ground items. Players can choose how they are notified (chat, action bar, or none).
-- **Server commands** – Commands for editing item data, dumping item info, scheduling clearlag, reloading configs, and more. See `/clearlag help` and `/flazesmpitems` in game.
+- **Server commands** – Commands for editing item data, dumping item info, reloading configs, and more. See `/flazesmpitems` in game.
 
 ## Building
 

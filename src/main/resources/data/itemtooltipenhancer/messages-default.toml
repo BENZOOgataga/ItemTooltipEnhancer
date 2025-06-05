@@ -59,44 +59,7 @@
     "command.reload.success" = "&aConfiguration reloaded successfully!"
     "command.reload.error" = "&cFailed to reload configuration: {0}"
     
-    # Clearlag messages
-    "clearlag.scheduled" = "&eManual clearlag scheduled to occur in 1 minute."
-    "clearlag.already_scheduled" = "&cA manual clearlag operation is already scheduled!"
-    "clearlag.none_scheduled" = "&eThere is no clearlag currently scheduled."
-    "clearlag.next" = "&eNext clearlag will occur in {0}"
-    "clearlag.warning" = "Items will be cleared in {0}"
-    "clearlag.manual_warning" = "Manual clearlag: Items will be cleared in {0}"
-    "clearlag.cleared" = "Cleared {0} item{1}"
-    "clearlag.notification" = "Next clearlag in {0}"
-    "clearlag.manual_notification" = "Manual clearlag in {0}"
-    
-    # Clearlag notification messages
-    "clearlag.notification.type.current" = "&eYour current clearlag notification type: &a{0}"
-    "clearlag.notification.type.change" = "&7You can change it with: /clearlag notifications <type>"
-    "clearlag.notification.type.invalid" = "&cInvalid notification type: {0}"
-    "clearlag.notification.type.valid" = "&eValid types: hotbar, chat, none"
-    "clearlag.notification.type.none_warning" = "&cWARNING: You will not receive any clearlag notifications!"
-    "clearlag.notification.type.chat" = "&aClearlag notifications will now appear in chat"
-    "clearlag.notification.type.hotbar" = "&aClearlag notifications will now appear on your hotbar"
-    "clearlag.notification.type.none" = "&aClearlag notifications have been disabled (risky!)"
-    "clearlag.notification.type.player_only" = "This command must be used by a player"
-    
-    # Help command messages for clearlag
-    "command.clearlag.help.header" = "=== Clearlag Commands ==="
-    "command.clearlag.help.basic" = "/clearlag - Schedule a clearlag in 1 minute"
-    "command.clearlag.help.config" = "/clearlag config show - Show current configuration"
-    "command.clearlag.help.set" = "/clearlag config set <option> <value> - Change configuration"
-    "command.clearlag.help.time" = "/clearlag time - Check when the next clearlag will occur"
-    "command.clearlag.help.notifications" = "/clearlag notifications [type] - Set notification preferences (hotbar, chat, none)"
-    "command.clearlag.help.help" = "/clearlag help - Show this help message"
-    
     # Config command messages
-    "config.show.header" = "=== Clearlag Configuration ==="
-    "config.show.general" = "General settings:"
-    "config.show.notifications" = "Notification settings:"
-    "config.show.usage.set" = "Use /clearlag config set <option> <value> to modify settings."
-    "config.show.usage.warning_times" = "Use /clearlag config set warningTimes list to see warning times."
-    "config.show.usage.entity_types" = "Use /clearlag config set entityTypes list to see entity types."
     "config.unknown_setting" = "Unknown setting: {0}"
     "config.set.success" = "Set {0} to {1}"
     "config.invalid_value" = "Invalid {0}: {1}"

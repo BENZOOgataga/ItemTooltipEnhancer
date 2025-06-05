@@ -1,7 +1,5 @@
 package net.flazesmp.flazesmpitems;
 
-import net.flazesmp.flazesmpitems.clearlag.ClearlagConfig;
-import net.flazesmp.flazesmpitems.clearlag.ClearlagManager;
 import net.flazesmp.flazesmpitems.config.ConfigManager;
 import net.flazesmp.flazesmpitems.config.MessageConfig;
 import net.flazesmp.flazesmpitems.event.ItemDisplayNameHandler;
@@ -26,9 +24,8 @@ public class FlazeSMPItems {
         MinecraftForge.EVENT_BUS.register(ItemTooltipEventHandler.class);
         MinecraftForge.EVENT_BUS.register(ItemDisplayNameHandler.class);
         
-        // Register configs first
-        ClearlagConfig.register(); // Register clearlag configuration
-        MessageConfig.register(); // Register message configuration
+        // Register config files
+        MessageConfig.register();
         
         // Initialize the ConfigManager
         
@@ -38,12 +35,8 @@ public class FlazeSMPItems {
         RarityManager.initialize();
         
         // Register to the mod event bus
-        modEventBus.register(ClearlagConfig.class); // Register clearlag config events
-        modEventBus.register(MessageConfig.class); // Register message config events
-        
-        // Register ClearlagManager for forge events
-        MinecraftForge.EVENT_BUS.register(ClearlagManager.class);
-        
+        modEventBus.register(MessageConfig.class);
+
         // Register ourselves for server and other game events
         MinecraftForge.EVENT_BUS.register(this);
         
