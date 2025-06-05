@@ -6,5 +6,7 @@
   "itemrarity.legendary": "Legendary",
   "itemrarity.mythic": "Mythic",
   "itemrarity.special": "Special",
-  "itemrarity.admin": "Admin"
+  "itemrarity.admin": "Admin",
+  "key.itemtooltipenhancer.openscreen": "Open GUI",
+  "key.categories.itemtooltipenhancer": "Item Tooltip Enhancer"
 }
