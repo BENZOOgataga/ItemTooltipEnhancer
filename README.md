@@ -4,3 +4,12 @@
 ### Use ParchmentMC for the following (https://parchmentmc.org/docs/getting-started):
 - May need to add an id in plugins in build.gradle, change mapping values and mod values(YOU MUST CHANGE MOD VALUES SO IT DOES NOT INCLUDE MY NAME "SURYA GEDIPUDI")
 - May need to add maven in settings.gradle
+
+## Building
+Ensure JDK 17 is installed and on your `PATH`. Then run:
+
+```bash
+./gradlew build
+```
+
+This produces the mod jar under `build/libs/`.
