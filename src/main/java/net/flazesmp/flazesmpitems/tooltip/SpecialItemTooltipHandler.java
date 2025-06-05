@@ -122,7 +122,7 @@ public class SpecialItemTooltipHandler {
         } else {
             // Handle potions with a potion type but no effects 
             // (rare case, but could happen with some mods or custom potions)
-            if (!potion.getName("").getString().isEmpty()) {
+            if (!potion.getName("").isEmpty()) {
                 tooltip.add(Component.literal("")); // Empty line
                 tooltip.add(Component.literal(MessageConfig.getMessage("tooltip.potion.custom_potion"))
                     .withStyle(ChatFormatting.GRAY));

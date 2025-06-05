@@ -1,0 +1,64 @@
+name: Build and Release
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew build
+
+      - name: Extract version information
+        id: vars
+        run: |
+          mod_version=$(grep '^mod_version=' gradle.properties | cut -d '=' -f2)
+          semver=${mod_version%%-*}
+          mod_id=$(grep '^mod_id=' gradle.properties | cut -d '=' -f2)
+          jar_file="build/libs/${mod_id}-${mod_version}.jar"
+          echo "mod_version=$mod_version" >> "$GITHUB_OUTPUT"
+          echo "semver=$semver" >> "$GITHUB_OUTPUT"
+          echo "jar_file=$jar_file" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ steps.vars.outputs.semver }}
+          name: v${{ steps.vars.outputs.semver }}
+          commit: ${{ github.sha }}
+          artifacts: ${{ steps.vars.outputs.jar_file }}
+          artifactContentType: application/java-archive
+          allowUpdates: true
+
+      - name: Bump version for next release
+        run: |
+          mod_version=$(grep '^mod_version=' gradle.properties | cut -d '=' -f2)
+          mc_suffix=${mod_version#*-}
+          semver=${mod_version%%-*}
+          IFS='.' read -r major minor patch <<< "$semver"
+          patch=$((patch + 1))
+          new_semver="$major.$minor.$patch"
+          new_version="${new_semver}-${mc_suffix}"
+          sed -i "s/^mod_version=.*/mod_version=${new_version}/" gradle.properties
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "Bump version to ${new_version}"
+          git push
+
