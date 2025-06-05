@@ -101,23 +101,6 @@ public class MessageConfig {
             }
             writer.write("\n");
             
-            // Clearlag messages
-            writer.write("    # Clearlag messages\n");
-            for (Map.Entry<String, String> entry : ORIGINAL_MESSAGES.entrySet()) {
-                if (entry.getKey().startsWith("clearlag.") && !entry.getKey().startsWith("clearlag.notification.")) {
-                    writer.write("    \"" + entry.getKey() + "\" = \"" + entry.getValue() + "\"\n");
-                }
-            }
-            writer.write("\n");
-            
-            // Clearlag notification messages
-            writer.write("    # Clearlag notification messages\n");
-            for (Map.Entry<String, String> entry : ORIGINAL_MESSAGES.entrySet()) {
-                if (entry.getKey().startsWith("clearlag.notification.")) {
-                    writer.write("    \"" + entry.getKey() + "\" = \"" + entry.getValue() + "\"\n");
-                }
-            }
-            writer.write("\n");
             
             // Config messages
             writer.write("    # Config messages\n");
@@ -151,16 +134,6 @@ public class MessageConfig {
         ORIGINAL_MESSAGES.put("command.reset.not_found", "Item not found: &c{0}");
         ORIGINAL_MESSAGES.put("command.reset.invalid_id", "Invalid item ID format: &c{0}");
         
-        // Clearlag messages
-        ORIGINAL_MESSAGES.put("clearlag.scheduled", "&eManual clearlag scheduled to occur in 1 minute.");
-        ORIGINAL_MESSAGES.put("clearlag.already_scheduled", "&cA manual clearlag operation is already scheduled!");
-        ORIGINAL_MESSAGES.put("clearlag.none_scheduled", "&eThere is no clearlag currently scheduled.");
-        ORIGINAL_MESSAGES.put("clearlag.next", "&eNext clearlag will occur in {0}");
-        ORIGINAL_MESSAGES.put("clearlag.warning", "Items will be cleared in {0}");
-        ORIGINAL_MESSAGES.put("clearlag.manual_warning", "Manual clearlag: Items will be cleared in {0}");
-        ORIGINAL_MESSAGES.put("clearlag.cleared", "Cleared {0} item{1}");
-        ORIGINAL_MESSAGES.put("clearlag.notification", "Next clearlag in {0}");
-        ORIGINAL_MESSAGES.put("clearlag.manual_notification", "Manual clearlag in {0}");
         
         // Item command messages
         ORIGINAL_MESSAGES.put("command.name.success", "&aUpdated display name for {0} to: {1}");
@@ -176,16 +149,6 @@ public class MessageConfig {
         ORIGINAL_MESSAGES.put("command.reload.success", "&aConfiguration reloaded successfully!");
         ORIGINAL_MESSAGES.put("command.reload.error", "&cFailed to reload configuration: {0}");
         
-        // Clearlag notification messages
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.current", "&eYour current clearlag notification type: &a{0}");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.change", "&7You can change it with: /clearlag notifications <type>");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.invalid", "&cInvalid notification type: {0}");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.valid", "&eValid types: hotbar, chat, none");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.none_warning", "&cWARNING: You will not receive any clearlag notifications!");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.chat", "&aClearlag notifications will now appear in chat");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.hotbar", "&aClearlag notifications will now appear on your hotbar");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.none", "&aClearlag notifications have been disabled (risky!)");
-        ORIGINAL_MESSAGES.put("clearlag.notification.type.player_only", "This command must be used by a player");
         
         // Config messages
         ORIGINAL_MESSAGES.put("config.set.success", "Set {0} to {1}");

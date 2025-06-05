@@ -352,21 +352,6 @@ public class ConfigManager {
         }
         
         
-        // Check clearlag config file
-        Path clearlagConfigFile = FMLPaths.CONFIGDIR.get().resolve("itemtooltipenhancer-clearlag.toml");
-        if (Files.exists(clearlagConfigFile)) {
-            LOGGER.warn("Existing clearlag config detected at {}. Proceed with caution.", clearlagConfigFile);
-        } else {
-            LOGGER.warn("Clearlag config file doesn't exist, will create: {}", clearlagConfigFile);
-            needsRepair = true;
-        }
-        
-        // Ensure player preferences directory exists
-        Path playerPrefsDir = configDir.resolve("playerpreferencesdata");
-        if (!Files.exists(playerPrefsDir)) {
-            LOGGER.warn("Player preferences directory doesn't exist, will create: {}", playerPrefsDir);
-            needsRepair = true;
-        }
 
         // If issues were found, repair the configuration
         if (needsRepair) {
